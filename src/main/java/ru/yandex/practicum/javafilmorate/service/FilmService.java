@@ -3,15 +3,14 @@ package ru.yandex.practicum.javafilmorate.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.javafilmorate.model.Event;
-import ru.yandex.practicum.javafilmorate.model.EventType;
-import ru.yandex.practicum.javafilmorate.model.Film;
-import ru.yandex.practicum.javafilmorate.model.OperationType;
+import ru.yandex.practicum.javafilmorate.model.*;
 import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,10 +40,13 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    public void addLike(Integer filmId, Integer userId) {
+    public void addLike(Integer filmId, Integer userId, Integer grade) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление отметки \"like\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
-        likeStorage.addLike(filmId, userId);
+        try {
+            likeStorage.addLike(new Like(filmId, userId, 0));
+        } catch (Exception ignored) {
+        }
         eventService.add(new Event(EventType.LIKE, OperationType.ADD, filmId, userId));
     }
 
@@ -57,7 +59,11 @@ public class FilmService {
 
     public List<Film> getPopularFilms(Integer limit) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на получение списка {} самых популярных фильмов", limit);
-        return filmStorage.getPopularFilms(limit);
+        List<Film> films = filmStorage.findAll();
+        return films.stream()
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
     public void deleteFilm(int filmId) {

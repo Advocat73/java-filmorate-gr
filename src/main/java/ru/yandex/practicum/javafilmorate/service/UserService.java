@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.javafilmorate.model.*;
 import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.FriendStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.UserStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 
@@ -22,6 +23,7 @@ public class UserService {
     private final FilmStorage filmStorage;
     private final FriendStorage friendStorage;
     private final EventService eventService;
+    private final LikeStorage likeStorage;
 
     public User addUser(User user) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление пользователя с id {}", user.getId());
@@ -76,22 +78,24 @@ public class UserService {
     public List<Film> findRecommendationsForUser(Integer userId) {
         log.info("СЕРВИС: Обработка запроса на рекомендации фильмов для пользователя с id {}", userId);
         /* Получаем матрицу всех лайков: каждый элемент содержит: Id фильма + список лайков этому фильму */
-        Map<Integer, Set<Integer>> likes = userStorage.getAllLikes();
+        Map<Integer, Set<Like>> likes = likeStorage.getAllLikes();
         /* Формируем список Id фильмов, которые лайкнул юзер, и список наборов лайков, где присутствует юзер */
         List<Integer> userFilmsListId = new ArrayList<>();
-        List<Set<Integer>> listsIdUserPresent = new ArrayList<>();
-        for (Map.Entry<Integer, Set<Integer>> filmLikes : likes.entrySet())
-            if (filmLikes.getValue().contains(userId)) {
-                userFilmsListId.add(filmLikes.getKey());
-                listsIdUserPresent.add(filmLikes.getValue());
-            }
+        List<Set<Like>> listsIdUserPresent = new ArrayList<>();
+        for (Map.Entry<Integer, Set<Like>> filmLikes : likes.entrySet())
+            for (Like like : filmLikes.getValue())
+                if (like.getUserId() == userId) {
+                    userFilmsListId.add(filmLikes.getKey());
+                    listsIdUserPresent.add(filmLikes.getValue());
+                }
         /* Определяем, какой юзер(похожий) чаще всего лайкал те же фильмы, что и юзер */
         int similarUserId = findSimilarUserId(listsIdUserPresent, userId);
         /* Заполняем список Id фильмов, которые лайкнул похожий юзер  */
         List<Integer> similarUserFilmsListId = new ArrayList<>();
-        for (Map.Entry<Integer, Set<Integer>> filmLikes : likes.entrySet())
-            if (filmLikes.getValue().contains(similarUserId))
-                similarUserFilmsListId.add(filmLikes.getKey());
+        for (Map.Entry<Integer, Set<Like>> filmLikes : likes.entrySet())
+            for (Like like : filmLikes.getValue())
+                if (like.getUserId() == similarUserId)
+                    similarUserFilmsListId.add(filmLikes.getKey());
         /* Сравниваем списки фильмов, оставляем фильмы, которые лайкнул похожий юзер, а основной не лайкнул  */
         similarUserFilmsListId.removeAll(userFilmsListId);
         /* Получаем фильмы по Id  */
@@ -103,24 +107,24 @@ public class UserService {
         return films;
     }
 
-    private int findSimilarUserId(List<Set<Integer>> listsIdUserPresent, int userId) {
+    private int findSimilarUserId(List<Set<Like>> listsIdUserPresent, int userId) {
         int similarUserId = 0;
         int counterSimilarFilms = 0;
         /* Идем по списку наборов лайков для каждого фильма */
         for (int i = 0; i < listsIdUserPresent.size() && counterSimilarFilms < (listsIdUserPresent.size() - i); i++)
             /* Идем по конкретному набору лайков для конкретного фильиа */
-            for (int candidateUserId : listsIdUserPresent.get(i))
-                if (candidateUserId != userId && candidateUserId != similarUserId) {
+            for (Like candidateUser : listsIdUserPresent.get(i))
+                if (candidateUser.getUserId() != userId && candidateUser.getUserId() != similarUserId) {
                     /* Счетчик начинается с 1, т.к. кандидат в одном начальном наборе лайков с основным юзером */
                     int tmpCounter = 1;
                     /* Проходим по наборам лайков после текущего. Если находим кандидата в списке, то увеличиваем счетчик */
                     for (int j = i + 1; j < listsIdUserPresent.size(); j++)
-                        if (listsIdUserPresent.get(j).contains(candidateUserId))
+                        if (listsIdUserPresent.get(j).contains(candidateUser))
                             tmpCounter++;
                     /* Счетчик текущего кандидата сравниваем со счетчиком последнего похожего юзера */
                     if (tmpCounter > counterSimilarFilms) {
                         counterSimilarFilms = tmpCounter;
-                        similarUserId = candidateUserId;
+                        similarUserId = candidateUser.getUserId();
                     }
                 }
         return similarUserId;

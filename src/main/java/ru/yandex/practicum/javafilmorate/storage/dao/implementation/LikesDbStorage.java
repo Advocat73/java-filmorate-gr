@@ -5,10 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.javafilmorate.model.Like;
 import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
 import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @AllArgsConstructor
@@ -17,12 +18,14 @@ public class LikesDbStorage implements LikeStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void addLike(Integer filmId, Integer userId) {
+    public void addLike(Like like) {
+        int filmId = like.getFilmId();
+        int userId = like.getUserId();
         isFilmRegistered(filmId);
         isUserRegistered(userId);
         log.info("ХРАНИЛИЩЕ: Сохранение отметки\"like\" фильму с id {} от пользователя с id {}", filmId, userId);
-        String sqlQuery = "INSERT INTO LIKES (FILM_ID, USER_ID) VALUES (?, ?)";
-        jdbcTemplate.update(sqlQuery, filmId, userId);
+        String sqlQuery = "INSERT INTO LIKES (FILM_ID, USER_ID, GRADE) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sqlQuery, filmId, userId, like.getGrade());
     }
 
     @Override
@@ -35,11 +38,24 @@ public class LikesDbStorage implements LikeStorage {
     }
 
     @Override
-    public List<Integer> getLikes(int filmId) {
+    public List<Like> getLikes(int filmId) {
         isFilmRegistered(filmId);
         log.info("ХРАНИЛИЩЕ: Получение отметок \"like\" для фильма с id {}", filmId);
-        String sqlQuery = "SELECT USER_ID FROM LIKES WHERE FILM_ID = ?";
-        return jdbcTemplate.query(sqlQuery, (rs, rowNum) -> rs.getInt("USER_ID"), filmId);
+        String sqlQuery = "SELECT * FROM LIKES WHERE FILM_ID = ?";
+        return jdbcTemplate.query(sqlQuery,
+                (rs, rowNum) -> new Like (filmId, rs.getInt("USER_ID"), rs.getInt("GRADE")),
+                filmId);
+    }
+
+    @Override
+    public Map<Integer, Set<Like>> getAllLikes() {
+        log.info("ХРАНИЛИЩЕ: Получение карты всех лайков");
+        List<Map<String, Object>> likesDatabaseResult = jdbcTemplate.queryForList("SELECT * from likes");
+        Map<Integer, Set<Like>> likes = new HashMap<>();
+        for (Map<String, Object> map : likesDatabaseResult)
+            likes.computeIfAbsent((Integer) map.get("film_id"), k -> new HashSet<>())
+                    .add(new Like((Integer) map.get("FILM_ID"), (Integer) map.get("USER_ID"), (Integer) map.get("GRADE")));
+        return likes;
     }
 
     private void isFilmRegistered(int filmId) {

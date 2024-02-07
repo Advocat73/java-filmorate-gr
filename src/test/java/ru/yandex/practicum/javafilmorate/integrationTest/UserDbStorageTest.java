@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.javafilmorate.JavaFilmorateApplication;
 import ru.yandex.practicum.javafilmorate.model.Film;
+import ru.yandex.practicum.javafilmorate.model.Like;
 import ru.yandex.practicum.javafilmorate.model.Mpa;
 import ru.yandex.practicum.javafilmorate.model.User;
 import ru.yandex.practicum.javafilmorate.service.EventService;
@@ -90,26 +91,26 @@ class UserDbStorageTest {
     @Test
     @DisplayName("Проверка метода findSimilarUserId в UserService")
     void findRecommendationsForUserTest() {
-        UserService userService = new UserService(userDbStorage, filmDbStorage, friendStorage, eventService);
+        UserService userService = new UserService(userDbStorage, filmDbStorage, friendStorage, eventService, likeStorage);
 
         Film film1 = new Film(null, "Film1", "Description1", LocalDate.parse("1970-01-01"),
-                140, new Mpa(1, "G"), 0);
+                140, new Mpa(1, "G"));
         filmDbStorage.addFilm(film1);
         int film1Id = film1.getId();
         Film film2 = new Film(null, "Film2", "Description2", LocalDate.parse("1980-01-01"),
-                90, new Mpa(2, "PG"), 0);
+                90, new Mpa(2, "PG"));
         filmDbStorage.addFilm(film2);
         int film2Id = film2.getId();
         Film film3 = new Film(null, "Film3", "Description3", LocalDate.parse("1990-01-01"),
-                190, new Mpa(2, "PG"), 0);
+                190, new Mpa(2, "PG"));
         filmDbStorage.addFilm(film3);
         int film3Id = film3.getId();
         Film film4 = new Film(null, "Film4", "Description4", LocalDate.parse("1980-01-01"),
-                190, new Mpa(2, "PG"), 0);
+                190, new Mpa(2, "PG"));
         filmDbStorage.addFilm(film4);
         int film4Id = film4.getId();
         Film film5 = new Film(null, "Film5", "Description5", LocalDate.parse("1985-01-01"),
-                190, new Mpa(2, "PG"), 0);
+                190, new Mpa(2, "PG"));
         filmDbStorage.addFilm(film5);
         int film5Id = film5.getId();
 
@@ -117,16 +118,16 @@ class UserDbStorageTest {
         int user2Id = secontUser.getId();
         int user3Id = thirdUser.getId();
 
-        likeStorage.addLike(film1Id, user1Id);
-        likeStorage.addLike(film2Id, user1Id);
-        likeStorage.addLike(film3Id, user1Id);
-        likeStorage.addLike(film5Id, user1Id);
+        likeStorage.addLike(new Like(film1Id, user1Id));
+        likeStorage.addLike(new Like(film2Id, user1Id));
+        likeStorage.addLike(new Like(film3Id, user1Id));
+        likeStorage.addLike(new Like(film5Id, user1Id));
 
-        likeStorage.addLike(film1Id, user2Id);
-        likeStorage.addLike(film2Id, user2Id);
+        likeStorage.addLike(new Like(film1Id, user2Id));
+        likeStorage.addLike(new Like(film2Id, user2Id));
 
-        likeStorage.addLike(film1Id, user3Id);
-        likeStorage.addLike(film4Id, user3Id);
+        likeStorage.addLike(new Like(film1Id, user3Id));
+        likeStorage.addLike(new Like(film4Id, user3Id));
         /* Рекомендация фильмов должна состоять из списка одного фильма с Id 3*/
         List<Film> films = userService.findRecommendationsForUser(user2Id);
         assertThat(films.size()).isEqualTo(2);

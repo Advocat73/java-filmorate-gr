@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.javafilmorate.model.Film;
+import ru.yandex.practicum.javafilmorate.model.Like;
 import ru.yandex.practicum.javafilmorate.service.FilmService;
 
 import javax.validation.Valid;
@@ -88,7 +89,7 @@ public class FilmController {
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable int id, @PathVariable int userId) {
         log.info("КОНТРОЛЛЕР: PUT-запрос по эндпоинту /films/{}/like/{}", id, userId);
-        filmService.addLike(id, userId);
+        filmService.addLike(id, userId, 0);
     }
 
     @DeleteMapping("/{id}/like/{userId}")

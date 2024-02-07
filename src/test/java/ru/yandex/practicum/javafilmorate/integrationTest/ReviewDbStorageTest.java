@@ -11,6 +11,7 @@ import ru.yandex.practicum.javafilmorate.model.Film;
 import ru.yandex.practicum.javafilmorate.model.Mpa;
 import ru.yandex.practicum.javafilmorate.model.Review;
 import ru.yandex.practicum.javafilmorate.model.User;
+import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.ReviewStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.*;
 import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
@@ -35,14 +36,15 @@ public class ReviewDbStorageTest {
         GenreDbStorage genreStorage = new GenreDbStorage(jdbcTemplate);
         MpaDbStorage mpaDbStorage = new MpaDbStorage(jdbcTemplate);
         DirectorDbStorage directorDbStorage = new DirectorDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, mpaDbStorage, genreStorage, directorDbStorage);
+        LikeStorage likeStorage = new LikesDbStorage(jdbcTemplate);
+        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, mpaDbStorage, genreStorage, directorDbStorage, likeStorage);
         UserDbStorage userDbStorage = new UserDbStorage(jdbcTemplate);
         Film film1 = new Film(null, "Film1", "Description1", LocalDate.parse("1970-01-01"),
-                140, new Mpa(1, "G"), 0);
+                140, new Mpa(1, "G"));
         filmStorage.addFilm(film1);
         film1Id = film1.getId();
         Film film2 = new Film(null, "Film2", "Description2", LocalDate.parse("1980-01-01"),
-                90, new Mpa(2, "PG"), 0);
+                90, new Mpa(2, "PG"));
         filmStorage.addFilm(film2);
         film2Id = film2.getId();
 

@@ -30,11 +30,11 @@ public class FilmDbStorageTest {
     private final UserDbStorage userDbStorage;
     private final DirectorStorage directorStorage;
     private final Film film1 = new Film(null, "Film1", "Description1", LocalDate.parse("1970-01-01"),
-            140, new Mpa(1, "G"), 0);
+            140, new Mpa(1, "G"));
     private final Film film2 = new Film(null, "Film2", "Description2", LocalDate.parse("1980-01-01"),
-            90, new Mpa(2, "PG"), 0);
+            90, new Mpa(2, "PG"));
     private final Film film3 = new Film(null, "Film3", "Description3", LocalDate.parse("1990-01-01"),
-            190, new Mpa(2, "PG"), 0);
+            190, new Mpa(2, "PG"));
     private final User firstUser = new User(1, "email@yandex.ru", "Login1", "Name1", LocalDate.parse("1970-01-01"), null);
     private final User secondUser = new User(1, "email@gmail.com", "Login2", "Name2", LocalDate.parse("1980-01-01"), null);
     private final User thirdUser = new User(3, "email@gmail.com", "Login3", "Name3", LocalDate.parse("1990-01-01"), null);
@@ -62,7 +62,7 @@ public class FilmDbStorageTest {
     @Test
     @DisplayName("Проверка метода update для Film")
     void testUpdateFilm() {
-        Film updateFilm = new Film(1, "Film1", "updateDescription", LocalDate.parse("1990-01-01"), 140, new Mpa(1, "G"), 0);
+        Film updateFilm = new Film(1, "Film1", "updateDescription", LocalDate.parse("1990-01-01"), 140, new Mpa(1, "G"));
         filmStorage.updateFilm(updateFilm);
         Film afterUpdate = filmStorage.findById(1);
         Assertions.assertEquals(afterUpdate.getDescription(), "updateDescription");
@@ -85,14 +85,14 @@ public class FilmDbStorageTest {
     @Test
     @DisplayName("Проверка метода commonFilms для Film")
     void testCommonFilms() {
-        likesDbStorage.addLike(film1Id, user1Id);
-        likesDbStorage.addLike(film2Id, user1Id);
-        likesDbStorage.addLike(film3Id, user1Id);
+        likesDbStorage.addLike(new Like(film1Id, user1Id));
+        likesDbStorage.addLike(new Like(film2Id, user1Id));
+        likesDbStorage.addLike(new Like(film3Id, user1Id));
 
-        likesDbStorage.addLike(film1Id, user2Id);
-        likesDbStorage.addLike(film2Id, user2Id);
+        likesDbStorage.addLike(new Like(film1Id, user2Id));
+        likesDbStorage.addLike(new Like(film2Id, user2Id));
 
-        likesDbStorage.addLike(film2Id, user3Id);
+        likesDbStorage.addLike(new Like(film2Id, user3Id));
 
         /*Проверяем размер полученного списка*/
         List<Film> current = filmStorage.commonFilms(user1Id, user2Id);
@@ -151,12 +151,12 @@ public class FilmDbStorageTest {
         film3.getDirectors().add(director2);
         filmStorage.updateFilm(film3);
         //пользователи проставляют лайки
-        likesDbStorage.addLike(firstUser.getId(), film1.getId());
-        likesDbStorage.addLike(firstUser.getId(), film2.getId());
-        likesDbStorage.addLike(firstUser.getId(), film3.getId());
-        likesDbStorage.addLike(secondUser.getId(), film2.getId());
-        likesDbStorage.addLike(secondUser.getId(), film3.getId());
-        likesDbStorage.addLike(thirdUser.getId(), film3.getId());
+        likesDbStorage.addLike(new Like(firstUser.getId(), film1.getId()));
+        likesDbStorage.addLike(new Like(firstUser.getId(), film2.getId()));
+        likesDbStorage.addLike(new Like(firstUser.getId(), film3.getId()));
+        likesDbStorage.addLike(new Like(secondUser.getId(), film2.getId()));
+        likesDbStorage.addLike(new Like(secondUser.getId(), film3.getId()));
+        likesDbStorage.addLike(new Like(thirdUser.getId(), film3.getId()));
         //получение списка фильмов, отсортированного по лайкам
         List<Film> filmsByLikes = filmStorage.findDirectorFilmsByYearOrLikes(director.getId(), "likes");
         Assertions.assertEquals(filmsByLikes.size(), 2, "Количество фильмов не совпадает");
@@ -180,13 +180,13 @@ public class FilmDbStorageTest {
         film1.setGenres(Set.of(new Genre(2, "Драма")));
         filmStorage.updateFilm(film1);
 
-        likesDbStorage.addLike(film1Id, user1Id);
-        likesDbStorage.addLike(film1Id, user2Id);
-        likesDbStorage.addLike(film2Id, user1Id);
-        likesDbStorage.addLike(film2Id, user2Id);
-        likesDbStorage.addLike(film3Id, user1Id);
-        likesDbStorage.addLike(film3Id, user2Id);
-        likesDbStorage.addLike(film3Id, user3Id);
+        likesDbStorage.addLike(new Like(film1Id, user1Id));
+        likesDbStorage.addLike(new Like(film1Id, user2Id));
+        likesDbStorage.addLike(new Like(film2Id, user1Id));
+        likesDbStorage.addLike(new Like(film2Id, user2Id));
+        likesDbStorage.addLike(new Like(film3Id, user1Id));
+        likesDbStorage.addLike(new Like(film3Id, user2Id));
+        likesDbStorage.addLike(new Like(film3Id, user3Id));
 
         Assertions.assertEquals(List.of(filmStorage.findById(film3Id)), filmStorage.getPopularByGenre(1, 1),
                 "Должен выдать только filmId3");
@@ -201,18 +201,18 @@ public class FilmDbStorageTest {
     @DisplayName(("Проверка метода getPopularByYear"))
     void testGetPopularByYear() {
         Film film4 = new Film(null, "Film4", "Description4", LocalDate.parse("1990-10-01"),
-                140, new Mpa(1, "G"), 0);
+                140, new Mpa(1, "G"));
         film4.setGenres(Set.of(new Genre(2, "Драма")));
         filmStorage.addFilm(film4);
         int film4Id = film4.getId();
 
-        likesDbStorage.addLike(film1Id, user1Id);
-        likesDbStorage.addLike(film1Id, user2Id);
-        likesDbStorage.addLike(film2Id, user1Id);
-        likesDbStorage.addLike(film2Id, user2Id);
-        likesDbStorage.addLike(film4Id, user1Id);
-        likesDbStorage.addLike(film4Id, user2Id);
-        likesDbStorage.addLike(film4Id, user3Id);
+        likesDbStorage.addLike(new Like(film1Id, user1Id));
+        likesDbStorage.addLike(new Like(film1Id, user2Id));
+        likesDbStorage.addLike(new Like(film2Id, user1Id));
+        likesDbStorage.addLike(new Like(film2Id, user2Id));
+        likesDbStorage.addLike(new Like(film4Id, user1Id));
+        likesDbStorage.addLike(new Like(film4Id, user2Id));
+        likesDbStorage.addLike(new Like(film4Id, user3Id));
 
         Assertions.assertEquals(List.of(filmStorage.findById(film4Id)), filmStorage.getPopularByYear(1, 1990),
                 "Должен выдать только фильм film4Id");
@@ -226,13 +226,13 @@ public class FilmDbStorageTest {
     @DisplayName("Проверка метода getPopularByGenreAndYear")
     void testGetPopularByGenreAndYear() {
         Film film4 = new Film(null, "Film4", "Description4", LocalDate.parse("1990-10-01"),
-                140, new Mpa(1, "G"), 0);
+                140, new Mpa(1, "G"));
         film4.setGenres(Set.of(new Genre(2, "Драма")));
         filmStorage.addFilm(film4);
         int film4Id = film4.getId();
 
         Film film5 = new Film(null, "Film5", "Description5", LocalDate.parse("1990-10-10"),
-                140, new Mpa(1, "G"), 0);
+                140, new Mpa(1, "G"));
         film5.setGenres(Set.of(new Genre(2, "Драма")));
         filmStorage.addFilm(film5);
         int film5Id = film5.getId();
@@ -241,12 +241,12 @@ public class FilmDbStorageTest {
         film3.setGenres(Set.of(new Genre(1, "Комедия")));
         filmStorage.updateFilm(film3);
 
-        likesDbStorage.addLike(film3Id, user1Id);
-        likesDbStorage.addLike(film4Id, user1Id);
-        likesDbStorage.addLike(film4Id, user2Id);
-        likesDbStorage.addLike(film5Id, user1Id);
-        likesDbStorage.addLike(film5Id, user2Id);
-        likesDbStorage.addLike(film5Id, user3Id);
+        likesDbStorage.addLike(new Like(film3Id, user1Id));
+        likesDbStorage.addLike(new Like(film4Id, user1Id));
+        likesDbStorage.addLike(new Like(film4Id, user2Id));
+        likesDbStorage.addLike(new Like(film5Id, user1Id));
+        likesDbStorage.addLike(new Like(film5Id, user2Id));
+        likesDbStorage.addLike(new Like(film5Id, user3Id));
 
         Assertions.assertEquals(List.of(filmStorage.findById(film5Id)),
                 filmStorage.getPopularByGenreAndYear(1, 2, 1990),
@@ -264,7 +264,7 @@ public class FilmDbStorageTest {
         directorStorage.addDirector(director2);
 
         Film film34 = new Film(null, "gOlm34", "Description4", LocalDate.parse("1990-10-01"),
-                140, new Mpa(1, "G"), 0);
+                140, new Mpa(1, "G"));
         film34.getDirectors().add(director2);
         filmStorage.addFilm(film34);
         int film34Id = film34.getId();
@@ -276,11 +276,11 @@ public class FilmDbStorageTest {
         film3.getDirectors().add(director2);
         filmStorage.updateFilm(film3);
         // Добавляем лайки, так как фильмы сортируются по популярности
-        likesDbStorage.addLike(film2Id, user1Id);
-        likesDbStorage.addLike(film2Id, user2Id);
-        likesDbStorage.addLike(film3Id, user1Id);
-        likesDbStorage.addLike(film3Id, user2Id);
-        likesDbStorage.addLike(film3Id, user3Id);
+        likesDbStorage.addLike(new Like(film2Id, user1Id));
+        likesDbStorage.addLike(new Like(film2Id, user2Id));
+        likesDbStorage.addLike(new Like(film3Id, user1Id));
+        likesDbStorage.addLike(new Like(film3Id, user2Id));
+        likesDbStorage.addLike(new Like(film3Id, user3Id));
 
         Assertions.assertEquals(List.of(filmStorage.findById(film1Id)),
                 filmStorage.searchBySubstring("lm1", "title"), "Должен выдавать только film1");
@@ -289,7 +289,7 @@ public class FilmDbStorageTest {
         Assertions.assertEquals(List.of(filmStorage.findById(film2Id), filmStorage.findById(film1Id)),
                 filmStorage.searchBySubstring("torn", "director"), "Должен выдавать film2, film1");
         Assertions.assertEquals(List.of(filmStorage.findById(film3Id), filmStorage.findById(film2Id),
-                filmStorage.findById(1), filmStorage.findById(film34Id)),
+                        filmStorage.findById(1), filmStorage.findById(film34Id)),
                 filmStorage.searchBySubstring("ilm", "title,director"), "Должен выдать фильма 3, 2, 1, 4");
         Assertions.assertEquals(List.of(filmStorage.findById(film3Id), filmStorage.findById(film2Id),
                         filmStorage.findById(1), filmStorage.findById(film34Id)),

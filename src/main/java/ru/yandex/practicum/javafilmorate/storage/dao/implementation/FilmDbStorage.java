@@ -9,15 +9,14 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.javafilmorate.model.Film;
 import ru.yandex.practicum.javafilmorate.model.Genre;
-import ru.yandex.practicum.javafilmorate.storage.dao.DirectorStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.GenreStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.MpaStorage;
+import ru.yandex.practicum.javafilmorate.model.Like;
+import ru.yandex.practicum.javafilmorate.storage.dao.*;
 import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
@@ -27,6 +26,7 @@ public class FilmDbStorage implements FilmStorage {
     private final MpaStorage mpaStorage;
     private final GenreStorage genreStorage;
     private final DirectorStorage directorStorage;
+    private final LikeStorage likeStorage;
 
     @Override
     public List<Film> findAll() {
@@ -37,6 +37,8 @@ public class FilmDbStorage implements FilmStorage {
         while (rs.next()) {
             films.add(filmRowMap(rs));
         }
+        Map<Integer, Set<Like>> likes = likeStorage.getAllLikes();
+        films.forEach(film -> film.addLikes(likes.get(film.getId())));
         return films;
     }
 
@@ -99,16 +101,17 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getPopularFilms(int limit) {
         List<Film> films = new ArrayList<>();
-        String sqlQuery = "SELECT F.*, COUNT(L.ID) FROM FILMS AS F " +
-                "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
-                "GROUP BY F.FILM_ID ORDER BY COUNT(L.ID) DESC LIMIT ?";
+        String sqlQuery = "SELECT F.* FROM FILMS AS F " +
+                "JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                "GROUP BY L.FILM_ID ORDER BY COUNT(L.FILM_ID)  DESC LIMIT ?";
         SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, limit);
         System.out.println(rs);
         while (rs.next()) {
             films.add(filmRowMap(rs));
         }
         log.info("ХРАНИЛИЩЕ: Получение списка {} самых популярных фильмов", limit);
-        return films;
+        if ((films.size()==0)) return findAll().stream().limit(limit).collect(Collectors.toList());
+        else return films;
     }
 
     @Override
@@ -231,8 +234,7 @@ public class FilmDbStorage implements FilmStorage {
                 rs.getString("FILM_DESCRIPTION"),
                 rs.getDate("FILM_RELEASE_DATE").toLocalDate(),
                 rs.getInt("FILM_DURATION"),
-                mpaStorage.findById(rs.getInt("MPA_ID")),
-                getFilmLikes(rs.getInt("FILM_ID")));
+                mpaStorage.findById(rs.getInt("MPA_ID")));
         film.setGenres(getFilmGenres(film.getId()));
         film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId()));
         return film;
