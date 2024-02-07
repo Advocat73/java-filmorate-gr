@@ -8,6 +8,7 @@ import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,9 +61,20 @@ public class FilmService {
     public List<Film> getPopularFilms(Integer limit) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на получение списка {} самых популярных фильмов", limit);
         List<Film> films = filmStorage.findAll();
-        return films.stream()
-                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
+        List<FilmItem> filmGradeList = new ArrayList<>();
+
+        for (Film film : films) {
+            double gradeCount = 0;
+            for (Like like : film.getLikes())
+                gradeCount += like.getGrade();
+            if (film.getLikes().size() != 0)
+                filmGradeList.add(new FilmItem(film, gradeCount / film.getLikes().size()));
+        }
+
+        return filmGradeList.stream()
+                .sorted(Comparator.comparingDouble(FilmItem::getGrade).reversed())
                 .limit(limit)
+                .map(FilmItem::getFilm)
                 .collect(Collectors.toList());
     }
 
@@ -104,5 +116,31 @@ public class FilmService {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на получение списка фильмов режиссера с id {}, " +
                 "отсортированных по {}", directorId, sortBy);
         return filmStorage.findDirectorFilmsByYearOrLikes(directorId, sortBy);
+    }
+
+    private class FilmItem {
+        Film film;
+        Double grade;
+
+        public FilmItem(Film film, Double grade) {
+            this.film = film;
+            this.grade = grade;
+        }
+
+        public Film getFilm() {
+            return film;
+        }
+
+        public void setFilm(Film film) {
+            this.film = film;
+        }
+
+        public Double getGrade() {
+            return grade;
+        }
+
+        public void setGrade(Double grade) {
+            this.grade = grade;
+        }
     }
 }

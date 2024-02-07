@@ -11,7 +11,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.javafilmorate.JavaFilmorateApplication;
 import ru.yandex.practicum.javafilmorate.model.*;
+import ru.yandex.practicum.javafilmorate.service.FilmService;
 import ru.yandex.practicum.javafilmorate.storage.dao.DirectorStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.*;
 
 import java.time.LocalDate;
@@ -29,6 +31,9 @@ public class FilmDbStorageTest {
     private final LikesDbStorage likesDbStorage;
     private final UserDbStorage userDbStorage;
     private final DirectorStorage directorStorage;
+    private final EventDbStorage eventDbStorage;
+    private final FilmService filmService;
+
     private final Film film1 = new Film(null, "Film1", "Description1", LocalDate.parse("1970-01-01"),
             140, new Mpa(1, "G"));
     private final Film film2 = new Film(null, "Film2", "Description2", LocalDate.parse("1980-01-01"),
@@ -85,14 +90,14 @@ public class FilmDbStorageTest {
     @Test
     @DisplayName("Проверка метода commonFilms для Film")
     void testCommonFilms() {
-        likesDbStorage.addLike(new Like(film1Id, user1Id));
-        likesDbStorage.addLike(new Like(film2Id, user1Id));
-        likesDbStorage.addLike(new Like(film3Id, user1Id));
+        likesDbStorage.addLike(new Like(film1Id, user1Id, 2));
+        likesDbStorage.addLike(new Like(film2Id, user1Id, 4));
+        likesDbStorage.addLike(new Like(film3Id, user1Id, 6));
 
-        likesDbStorage.addLike(new Like(film1Id, user2Id));
-        likesDbStorage.addLike(new Like(film2Id, user2Id));
+        likesDbStorage.addLike(new Like(film1Id, user2Id, 4));
+        likesDbStorage.addLike(new Like(film2Id, user2Id, 6));
 
-        likesDbStorage.addLike(new Like(film2Id, user3Id));
+        likesDbStorage.addLike(new Like(film2Id, user3Id, 5));
 
         /*Проверяем размер полученного списка*/
         List<Film> current = filmStorage.commonFilms(user1Id, user2Id);
@@ -295,5 +300,25 @@ public class FilmDbStorageTest {
                         filmStorage.findById(1), filmStorage.findById(film34Id)),
                 filmStorage.searchBySubstring("ilm", "director,title"), "Порядок параметров в by не" +
                         "имеет значения");
+    }
+
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    @Test
+    @DisplayName("Проверка выявления популярности, исходя из оценок в лайках")
+    void testPopularByGradesInLikes() {
+        likesDbStorage.addLike(new Like(film1Id, user1Id, 2));
+        likesDbStorage.addLike(new Like(film2Id, user1Id, 4));
+        likesDbStorage.addLike(new Like(film3Id, user1Id, 6));
+
+        likesDbStorage.addLike(new Like(film1Id, user2Id, 4));
+        likesDbStorage.addLike(new Like(film2Id, user2Id, 6));
+
+        likesDbStorage.addLike(new Like(film2Id, user3Id, 5));
+
+        List<Film> films = filmService.getPopularFilms(5);
+
+        /*Проверяем правильность полученного списка*/
+        Assertions.assertEquals(film3Id, films.get(0).getId(), "Не выявлен самый популярный фильм");
+        Assertions.assertEquals(film1Id, films.get(2).getId(), "Не выявлен самый непопулярный фильм");
     }
 }
