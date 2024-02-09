@@ -91,11 +91,23 @@ public class FilmDbStorage implements FilmStorage {
         log.info("ХРАНИЛИЩЕ: Получение фильма по id {}", filmId);
         String sqlQuery = "SELECT * FROM FILMS WHERE FILM_ID = ?";
         SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, filmId);
+        Film film;
         if (rs.next()) {
-            return filmRowMap(rs);
+            film = filmRowMap(rs);
         } else {
             throw new UnregisteredDataException("Фильм с id " + filmId + " не зарегистрирован в системе");
         }
+        rs = jdbcTemplate.queryForRowSet("SELECT * FROM LIKES WHERE FILM_ID = ?", filmId);
+        Set<Like> likes = new HashSet<>();
+        while (rs.next()) {
+            Like like = new Like(
+                    rs.getInt("FILM_ID"),
+                    rs.getInt("USER_ID"),
+                    rs.getInt("GRADE"));
+            likes.add(like);
+        }
+        film.addLikes(likes);
+        return film;
     }
 
     @Override

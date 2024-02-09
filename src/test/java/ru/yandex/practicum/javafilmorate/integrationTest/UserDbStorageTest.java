@@ -118,20 +118,20 @@ class UserDbStorageTest {
         int user2Id = secontUser.getId();
         int user3Id = thirdUser.getId();
 
-        likeStorage.addLike(new Like(film1Id, user1Id));
-        likeStorage.addLike(new Like(film2Id, user1Id));
-        likeStorage.addLike(new Like(film3Id, user1Id));
-        likeStorage.addLike(new Like(film5Id, user1Id));
+        likeStorage.addLike(new Like(film1Id, user1Id, 5));
+        likeStorage.addLike(new Like(film2Id, user1Id, 4));
+        likeStorage.addLike(new Like(film3Id, user1Id, 6));
+        likeStorage.addLike(new Like(film5Id, user1Id, 2));
 
-        likeStorage.addLike(new Like(film1Id, user2Id));
-        likeStorage.addLike(new Like(film2Id, user2Id));
+        likeStorage.addLike(new Like(film1Id, user2Id, 4));
+        likeStorage.addLike(new Like(film2Id, user2Id, 6));
 
-        likeStorage.addLike(new Like(film1Id, user3Id));
-        likeStorage.addLike(new Like(film4Id, user3Id));
+        likeStorage.addLike(new Like(film1Id, user3Id, 6));
+        likeStorage.addLike(new Like(film4Id, user3Id, 4));
         /* Рекомендация фильмов должна состоять из списка одного фильма с Id 3*/
         List<Film> films = userService.findRecommendationsForUser(user2Id);
-        assertThat(films.size()).isEqualTo(2);
+        assertThat(films.size()).isEqualTo(1);
         assertThat(films.get(0).getId()).isEqualTo(3);
-        assertThat(films.get(1).getId()).isEqualTo(5);
+        //assertThat(films.get(1).getId()).isEqualTo(5);
     }
 }
