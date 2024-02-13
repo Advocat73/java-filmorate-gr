@@ -1,10 +1,10 @@
 package ru.yandex.practicum.javafilmorate.integrationTest;
 
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.Assertions;
+//import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+//import org.junit.jupiter.api.DisplayName;
+//import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,8 +19,8 @@ import ru.yandex.practicum.javafilmorate.storage.dao.implementation.LikesDbStora
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.UserDbStorage;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
+//import java.util.List;
+//import java.util.Set;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
