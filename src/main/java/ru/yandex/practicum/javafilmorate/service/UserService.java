@@ -11,7 +11,6 @@ import ru.yandex.practicum.javafilmorate.storage.dao.UserStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
