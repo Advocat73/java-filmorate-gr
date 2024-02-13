@@ -122,7 +122,7 @@ public class FilmDbStorage implements FilmStorage {
             films.add(filmRowMap(rs));
         }
         log.info("ХРАНИЛИЩЕ: Получение списка {} самых популярных фильмов", limit);
-        if ((films.size()==0)) return findAll().stream().limit(limit).collect(Collectors.toList());
+        if ((films.size() == 0)) return findAll().stream().limit(limit).collect(Collectors.toList());
         else return films;
     }
 
