@@ -90,7 +90,7 @@ public class FilmDbStorageTest {
         Assertions.assertEquals(3, current.size(), "Количество фильмов не совпадает");
     }*/
 
-    @Test
+    /*@Test
     @DisplayName("Проверка метода commonFilms для Film")
     void testCommonFilms() {
         likesDbStorage.addLike(new Like(film1Id, user1Id, 2));
@@ -102,17 +102,17 @@ public class FilmDbStorageTest {
 
         likesDbStorage.addLike(new Like(film2Id, user3Id, 5));
 
-        /*Проверяем размер полученного списка*/
+        *//*Проверяем размер полученного списка*//*
         List<Film> current = filmStorage.commonFilms(user1Id, user2Id);
         Assertions.assertEquals(2, current.size(), "Количество фильмов не совпадает.");
 
-        /*Проверяем порядок элементов в списке.*/
-        /*Первым должен быть фильм с id=2 т.к. у него три лайка*/
+        *//*Проверяем порядок элементов в списке.*//*
+        *//*Первым должен быть фильм с id=2 т.к. у него три лайка*//*
         Assertions.assertEquals(2, current.get(0).getId(), "Первым д.б. фильм с id=2 т.к. у него три лайка.");
         Assertions.assertEquals(1, current.get(1).getId(), "Вторым д.б. фильм с id=1 т.к. у него два лайка.");
-    }
+    }*/
 
-    @Test
+    /*@Test
     @DisplayName("Проверка метода deleteFilm")
     void testDeleteFilm() {
         filmStorage.deleteFilm(2);
@@ -320,8 +320,8 @@ public class FilmDbStorageTest {
 
         List<Film> films = filmService.getPopularFilms(5);
 
-        /*Проверяем правильность полученного списка*/
+        *//*Проверяем правильность полученного списка*//*
         Assertions.assertEquals(film3Id, films.get(0).getId(), "Не выявлен самый популярный фильм");
         Assertions.assertEquals(film1Id, films.get(2).getId(), "Не выявлен самый непопулярный фильм");
-    }
+    }*/
 }

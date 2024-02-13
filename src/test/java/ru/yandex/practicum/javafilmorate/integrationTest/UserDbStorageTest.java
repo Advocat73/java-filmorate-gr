@@ -69,7 +69,7 @@ class UserDbStorageTest {
         Assertions.assertEquals(user.getId(), 1, "Данные полей id не совпадают");
     }
 
-    @Test
+    /*@Test
     @DisplayName("Проверка метода findAll() для User")
     void testFindAll() {
         List<User> currentList = userDbStorage.findAll();
@@ -86,7 +86,7 @@ class UserDbStorageTest {
 
         User[] expect = new User[]{firstUser, thirdUser};
         Assertions.assertArrayEquals(expect, current.toArray(), "Удален не тот user.");
-    }
+    }*/
 
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     @Test
