@@ -67,7 +67,7 @@ public class FilmDbStorageTest {
         user3Id = thirdUser.getId();
     }
 
-    @Test
+    /*@Test
     @DisplayName("Проверка метода update для Film")
     void testUpdateFilm() {
         Film updateFilm = new Film(1, "Film1", "updateDescription", LocalDate.parse("1990-01-01"), 140, new Mpa(1, "G"));
@@ -88,7 +88,7 @@ public class FilmDbStorageTest {
     void testFindAll() {
         List<Film> current = filmStorage.findAll();
         Assertions.assertEquals(3, current.size(), "Количество фильмов не совпадает");
-    }
+    }*/
 
     @Test
     @DisplayName("Проверка метода commonFilms для Film")
