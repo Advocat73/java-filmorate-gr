@@ -43,7 +43,7 @@ public class LikesDbStorage implements LikeStorage {
         log.info("ХРАНИЛИЩЕ: Получение отметок \"like\" для фильма с id {}", filmId);
         String sqlQuery = "SELECT * FROM LIKES WHERE FILM_ID = ?";
         return jdbcTemplate.query(sqlQuery,
-                (rs, rowNum) -> new Like (filmId, rs.getInt("USER_ID"), rs.getInt("GRADE")),
+                (rs, rowNum) -> new Like(filmId, rs.getInt("USER_ID"), rs.getInt("GRADE")),
                 filmId);
     }
 
