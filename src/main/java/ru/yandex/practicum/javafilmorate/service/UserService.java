@@ -78,8 +78,8 @@ public class UserService {
         /* Получаем матрицу всех лайков: каждый элемент содержит: Id фильма + список лайков этому фильму */
         Map<Integer, Set<Like>> likes = likeStorage.getAllLikes();
         /* Формируем: */
-        /* список Id фильмов, которые лайкнул юзер */
-        /* мапу, состоящую из лайка юзера и список лайков, где присутствует юзер */
+        /* список Id фильмов, которые лайкнул юзер и */
+        /* мапу, состоящую из лайка юзера и списка лайков, где присутствует юзер с лайком, который является ключом */
         List<Integer> userFilmsListId = new ArrayList<>();
         HashMap<Like, Set<Like>> mapLikesUserPresent = new HashMap<>();
         for (Map.Entry<Integer, Set<Like>> filmLikes : likes.entrySet())
@@ -139,17 +139,23 @@ public class UserService {
     }
 
     private List<Integer> sortListResulItemAndReturnListId(List<ResultItem> listResult) {
-        return listResult.stream()
-                .filter(ri -> ri.getFinalGrade().equals(listResult.get(0).getFinalGrade()))
-                .sorted(Comparator.comparingDouble(ResultItem::getFinalGrade))
-                .map(ResultItem::getUserId)
-                .collect(Collectors.toList());
+        /* Сортируем лист результатов */
+        listResult.sort(Comparator.comparingDouble(ResultItem::getFinalGrade));
+        /* Запоминаем первый - с самой маленькой оценкой-разницей с основным юзером */
+        Double resD = listResult.get(0).getFinalGrade();
+        List<Integer> returnList = new ArrayList<>();
+        /* Смотрим есть ли еще юзеры с такой же оценкой-разницей, если есть включаем в возвращаемый список */
+        int i = 0;
+        while (listResult.get(i).getFinalGrade().equals(resD))
+            returnList.add(listResult.get(i++).getUserId());
+        return returnList;
     }
 
     private List<Film> getListRecommendFilmsForUserFromListSimilarUserId(Map<Integer, Set<Like>> likes,
                                                                          List<Integer> userFilmsListId,
                                                                          List<Integer> listResultSimilarId) {
-        List<Film> films = new ArrayList<>();
+        /* Собираем фильмы в сет, чтобы повторяющиеся не попали в список */
+        Set<Film> films = new HashSet<>();
         /* Для каждого ID из списка похожих юзеров формируем список Id фильмов, которые лайкнул похожий юзер */
         for (Integer similarUserId : listResultSimilarId) {
             List<Integer> similarUserFilmsListId = new ArrayList<>();
@@ -165,7 +171,7 @@ public class UserService {
                     films.add(filmStorage.findById(filmId));
             });
         }
-        return films;
+        return new ArrayList<>(films);
     }
 
     private static class ResultItem {

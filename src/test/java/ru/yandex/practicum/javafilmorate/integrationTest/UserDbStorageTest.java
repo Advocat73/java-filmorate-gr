@@ -41,13 +41,14 @@ class UserDbStorageTest {
     private final User firstUser = new User(1, "email@yandex.ru", "Login1", "Name1", LocalDate.parse("1970-01-01"), null);
     private final User secontUser = new User(1, "email@gmail.com", "Login2", "Name2", LocalDate.parse("1980-01-01"), null);
     private final User thirdUser = new User(3, "email@gmail.com", "Login3", "Name3", LocalDate.parse("1990-01-01"), null);
-
+    private final User forthUser = new User(4, "email@gmail.ru", "Login4", "Name4", LocalDate.parse("1995-01-01"), null);
 
     @BeforeEach
     void createUserData() {
         userDbStorage.addUser(firstUser);
         userDbStorage.addUser(secontUser);
         userDbStorage.addUser(thirdUser);
+        userDbStorage.addUser(forthUser);
     }
 
     @Test
@@ -117,17 +118,22 @@ class UserDbStorageTest {
         int user1Id = firstUser.getId();
         int user2Id = secontUser.getId();
         int user3Id = thirdUser.getId();
-
+        int user4Id = forthUser.getId();
         likeStorage.addLike(new Like(film1Id, user1Id, 5));
         likeStorage.addLike(new Like(film2Id, user1Id, 4));
         likeStorage.addLike(new Like(film3Id, user1Id, 6));
-        likeStorage.addLike(new Like(film5Id, user1Id, 2));
 
         likeStorage.addLike(new Like(film1Id, user2Id, 4));
         likeStorage.addLike(new Like(film2Id, user2Id, 6));
+        likeStorage.addLike(new Like(film5Id, user2Id, 6));
 
         likeStorage.addLike(new Like(film1Id, user3Id, 6));
-        likeStorage.addLike(new Like(film4Id, user3Id, 4));
+        likeStorage.addLike(new Like(film4Id, user3Id, 5));
+
+        likeStorage.addLike(new Like(film1Id, user4Id, 6));
+        likeStorage.addLike(new Like(film5Id, user4Id, 5));
+        likeStorage.addLike(new Like(film3Id, user4Id, 8));
+
         /* Рекомендация фильмов должна состоять из списка одного фильма с Id 3*/
         List<Film> films = userService.findRecommendationsForUser(user2Id);
         assertThat(films.size()).isEqualTo(1);
