@@ -73,7 +73,7 @@ public class UserService {
         CheckUtil.checkNotFound(userStorage.deleteUser(userId), " пользователь с id=" + userId);
     }
 
-    public List<Film> findRecommendationsForUser(Integer requesterId ) {
+    public List<Film> findRecommendationsForUser(Integer requesterId) {
         log.info("СЕРВИС: Обработка запроса на рекомендации фильмов для пользователя с id {}", requesterId);
 
         Map<Integer, Set<Mark>> marks = markStorage.getAllMarks();
