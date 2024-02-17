@@ -73,34 +73,36 @@ public class UserService {
         CheckUtil.checkNotFound(userStorage.deleteUser(userId), " пользователь с id=" + userId);
     }
 
-    public List<Film> findRecommendationsForUser(Integer userId) {
-        log.info("СЕРВИС: Обработка запроса на рекомендации фильмов для пользователя с id {}", userId);
+    public List<Film> findRecommendationsForUser(Integer requesterId ) {
+        log.info("СЕРВИС: Обработка запроса на рекомендации фильмов для пользователя с id {}", requesterId);
 
         Map<Integer, Set<Mark>> marks = markStorage.getAllMarks();
         List<Integer> userFilmsListId = new ArrayList<>();
         HashMap<Mark, Set<Mark>> mapMarksUserPresent = new HashMap<>();
         for (Map.Entry<Integer, Set<Mark>> filmMarks : marks.entrySet())
             for (Mark mark : filmMarks.getValue())
-                if (Objects.equals(mark.getUserId(), userId)) {
+                if (Objects.equals(mark.getUserId(), requesterId)) {
                     userFilmsListId.add(filmMarks.getKey());
                     mapMarksUserPresent.put(mark, filmMarks.getValue());
                 }
 
+        /* мапа, состоящая из ID юзера-кандидата и суммарной разницы лайков основного юзера и юзера-кандидата */
         HashMap<Integer, Integer> diff = new HashMap<>();
+        /* мапа, состоящая из ID юзера-кандидата и счетчика факта совпадения лайка основного юзера и юзера-кандидата */
         HashMap<Integer, Integer> freq = new HashMap<>();
 
-        for (Map.Entry<Mark, Set<Mark>> setLikesUserPresent : mapMarksUserPresent.entrySet()) {
-            Mark userMark = setLikesUserPresent.getKey();
-            for (Mark candidatMark : setLikesUserPresent.getValue()) {
-                if (!Objects.equals(userMark.getUserId(), candidatMark.getUserId())) {
+        for (Map.Entry<Mark, Set<Mark>> setMarksUserPresent : mapMarksUserPresent.entrySet()) {
+            Mark requesterMark = setMarksUserPresent.getKey();
+            for (Mark candidatMark : setMarksUserPresent.getValue()) {
+                if (!Objects.equals(requesterMark.getUserId(), candidatMark.getUserId())) {
                     if (!diff.containsKey(candidatMark.getUserId())) {
                         diff.put(candidatMark.getUserId(), 0);
                         freq.put(candidatMark.getUserId(), 0);
                     }
                     int oldGrade = diff.get(candidatMark.getUserId());
                     int oldCount = freq.get(candidatMark.getUserId());
-                    int currentGradeDiff = userMark.getRating() - candidatMark.getRating();
-                    diff.put(candidatMark.getUserId(), oldGrade + currentGradeDiff);
+                    int currentRatingDiff = requesterMark.getRating() - candidatMark.getRating();
+                    diff.put(candidatMark.getUserId(), oldGrade + currentRatingDiff);
                     freq.put(candidatMark.getUserId(), oldCount + 1);
                 }
             }
@@ -126,7 +128,7 @@ public class UserService {
         return true;
     }
 
-    private List<Film> getListRecommendFilmsForUserFromListSimilarUserId(Map<Integer, Set<Mark>> likes,
+    private List<Film> getListRecommendFilmsForUserFromListSimilarUserId(Map<Integer, Set<Mark>> marks,
                                                                          List<Integer> userFilmsListId,
                                                                          List<Integer> listResultSimilarId) {
         /* Собираем фильмы в сет, чтобы повторяющиеся не попали в список */
@@ -134,10 +136,10 @@ public class UserService {
         /* Для каждого ID из списка похожих юзеров формируем список Id фильмов, которые лайкнул похожий юзер */
         for (Integer similarUserId : listResultSimilarId) {
             List<Integer> similarUserFilmsListId = new ArrayList<>();
-            for (Map.Entry<Integer, Set<Mark>> filmLikes : likes.entrySet())
-                for (Mark like : filmLikes.getValue())
+            for (Map.Entry<Integer, Set<Mark>> filmMarks : marks.entrySet())
+                for (Mark like : filmMarks.getValue())
                     if (like.getUserId().equals(similarUserId))
-                        similarUserFilmsListId.add(filmLikes.getKey());
+                        similarUserFilmsListId.add(filmMarks.getKey());
             /* Удаляем повторяющиеся ID фильмов, проверяем на то,
             чтобы оценка похожего юзера была не ниже 5 и формируем список фильмов */
             similarUserFilmsListId.removeAll(userFilmsListId);

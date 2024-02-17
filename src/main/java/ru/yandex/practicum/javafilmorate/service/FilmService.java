@@ -7,7 +7,9 @@ import ru.yandex.practicum.javafilmorate.model.*;
 import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.MarkStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
+import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
+import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -41,18 +43,19 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    public void addLike(Integer filmId, Integer userId, Integer grade) {
-        log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление отметки \"like\" " +
+    public void addMark(Integer filmId, Integer userId, Integer rating) {
+        log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление отметки \"mark\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
         try {
-            markStorage.addMark(new Mark(filmId, userId, 0));
-        } catch (Exception ignored) {
+            markStorage.addMark(new Mark(filmId, userId, rating));
+        } catch (ConstraintViolationException e) {
+            throw new UnregisteredDataException("Пользователь с Id: " + userId + " уже дал оценку фильму с ID " + filmId);
         }
         eventService.add(new Event(EventType.LIKE, OperationType.ADD, filmId, userId));
     }
 
     public void deleteMark(Integer filmId, Integer userId) {
-        log.info("СЕРВИС: Отправлен запрос к хранилищу на удаление отметки \"like\" " +
+        log.info("СЕРВИС: Отправлен запрос к хранилищу на удаление отметки \"mark\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
         markStorage.deleteMark(filmId, userId);
         eventService.add(new Event(EventType.LIKE, OperationType.REMOVE, filmId, userId));
