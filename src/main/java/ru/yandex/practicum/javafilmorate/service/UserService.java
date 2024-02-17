@@ -11,6 +11,7 @@ import ru.yandex.practicum.javafilmorate.storage.dao.UserStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -115,15 +116,14 @@ public class UserService {
                 }
             }
         }
-        /* Запоняем список айтемов, каждый из которых содержит ID кандидата и (разницу в оценках фильма)/(количество совпадений) */
-        List<ResultItem> listResult = new ArrayList<>();
-        for (Map.Entry<Integer, Integer> e : diff.entrySet()) {
-            double res = (double) e.getValue() / (double) freq.get(e.getKey());
-            listResult.add(new ResultItem(e.getKey(), Math.abs(res)));
-        }
-        /* Сортируем от меньшего к большему и получаем из списка айтемов список айдишников похожих юзеров, */
-        /* сравнивая по полученным оценкам с первым. Останутся только те, которые равны первому */
-        List<Integer> listResultSimilarId = sortListResulItemAndReturnListId(listResult);
+
+        List<Integer> listResultSimilarId = diff.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> Math.abs((double) e.getValue() / (double) freq.get(e.getKey()))))
+                .entrySet().stream()
+                .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.mapping(Map.Entry::getKey, Collectors.toList())))
+                .entrySet().stream().min(Comparator.comparingDouble(Map.Entry::getKey))
+                .map(Map.Entry::getValue).orElse(List.of());
+
         /* Получаем и возвращаем список рекомендуемых фильмов*/
         return getListRecommendFilmsForUserFromListSimilarUserId(likes, userFilmsListId, listResultSimilarId);
     }
@@ -135,19 +135,6 @@ public class UserService {
             if (like.getUserId() == userId && like.getGrade() < 5)
                 return false;
         return true;
-    }
-
-    private List<Integer> sortListResulItemAndReturnListId(List<ResultItem> listResult) {
-        /* Сортируем лист результатов */
-        listResult.sort(Comparator.comparingDouble(ResultItem::getFinalGrade));
-        /* Запоминаем первый - с самой маленькой оценкой-разницей с основным юзером */
-        Double resD = listResult.get(0).getFinalGrade();
-        List<Integer> returnList = new ArrayList<>();
-        /* Смотрим есть ли еще юзеры с такой же оценкой-разницей, если есть включаем в возвращаемый список */
-        int i = 0;
-        while (listResult.get(i).getFinalGrade().equals(resD))
-            returnList.add(listResult.get(i++).getUserId());
-        return returnList;
     }
 
     private List<Film> getListRecommendFilmsForUserFromListSimilarUserId(Map<Integer, Set<Like>> likes,
@@ -171,31 +158,5 @@ public class UserService {
             });
         }
         return new ArrayList<>(films);
-    }
-
-    private static class ResultItem {
-        Integer userId;
-        Double finalGrade;
-
-        public ResultItem(Integer userId, Double finalGrade) {
-            this.userId = userId;
-            this.finalGrade = finalGrade;
-        }
-
-        public Integer getUserId() {
-            return userId;
-        }
-
-        public void setUserId(Integer userId) {
-            this.userId = userId;
-        }
-
-        public Double getFinalGrade() {
-            return finalGrade;
-        }
-
-        public void setFinalGrade(Double finalGrade) {
-            this.finalGrade = finalGrade;
-        }
     }
 }
