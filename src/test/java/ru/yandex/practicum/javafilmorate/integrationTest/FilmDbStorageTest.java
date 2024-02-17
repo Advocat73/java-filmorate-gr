@@ -15,7 +15,7 @@ import ru.yandex.practicum.javafilmorate.service.FilmService;
 import ru.yandex.practicum.javafilmorate.storage.dao.DirectorStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.EventDbStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.FilmDbStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.implementation.LikesDbStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.implementation.MarkDbStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.UserDbStorage;
 
 import java.time.LocalDate;
@@ -31,7 +31,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFOR
 public class FilmDbStorageTest {
 
     private final FilmDbStorage filmStorage;
-    private final LikesDbStorage likesDbStorage;
+    private final MarkDbStorage likesDbStorage;
     private final UserDbStorage userDbStorage;
     private final DirectorStorage directorStorage;
     private final EventDbStorage eventDbStorage;

@@ -9,7 +9,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.javafilmorate.model.Film;
 import ru.yandex.practicum.javafilmorate.model.Genre;
-import ru.yandex.practicum.javafilmorate.model.Like;
+import ru.yandex.practicum.javafilmorate.model.Mark;
 import ru.yandex.practicum.javafilmorate.storage.dao.*;
 import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
@@ -26,7 +26,7 @@ public class FilmDbStorage implements FilmStorage {
     private final MpaStorage mpaStorage;
     private final GenreStorage genreStorage;
     private final DirectorStorage directorStorage;
-    private final LikeStorage likeStorage;
+    private final MarkStorage markStorage;
 
     @Override
     public List<Film> findAll() {
@@ -37,8 +37,8 @@ public class FilmDbStorage implements FilmStorage {
         while (rs.next()) {
             films.add(filmRowMap(rs));
         }
-        Map<Integer, Set<Like>> likes = likeStorage.getAllLikes();
-        films.forEach(film -> film.addLikes(likes.get(film.getId())));
+        Map<Integer, Set<Mark>> marks = markStorage.getAllMarks();
+        films.forEach(film -> film.addMarks(marks.get(film.getId())));
         return films;
     }
 
@@ -98,15 +98,15 @@ public class FilmDbStorage implements FilmStorage {
             throw new UnregisteredDataException("Фильм с id " + filmId + " не зарегистрирован в системе");
         }
         rs = jdbcTemplate.queryForRowSet("SELECT * FROM LIKES WHERE FILM_ID = ?", filmId);
-        Set<Like> likes = new HashSet<>();
+        Set<Mark> marks = new HashSet<>();
         while (rs.next()) {
-            Like like = new Like(
+            Mark mark = new Mark(
                     rs.getInt("FILM_ID"),
                     rs.getInt("USER_ID"),
                     rs.getInt("GRADE"));
-            likes.add(like);
+            marks.add(mark);
         }
-        film.addLikes(likes);
+        film.addMarks(marks);
         return film;
     }
 

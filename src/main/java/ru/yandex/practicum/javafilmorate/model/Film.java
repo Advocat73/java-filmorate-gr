@@ -26,7 +26,7 @@ public class Film {
     @Positive(message = "Продолжительнось фильма должна быть больше 0")
     private final Integer duration;
     private final Mpa mpa;
-    private final Set<Like> likes = new HashSet<>();
+    private final Set<Mark> marks = new HashSet<>();
     private Set<Genre> genres = new HashSet<>();
     private Set<Director> directors = new HashSet<>();
 
@@ -50,12 +50,12 @@ public class Film {
         return values;
     }
 
-    public void addLike(Like like) {
-        likes.add(like);
+    public void addMark(Mark mark) {
+        marks.add(mark);
     }
 
-    public void addLikes(Set<Like> likes) {
-        if (likes != null)
-            this.likes.addAll(likes);
+    public void addMarks(Set<Mark> marks) {
+        if (marks != null)
+            this.marks.addAll(marks);
     }
 }

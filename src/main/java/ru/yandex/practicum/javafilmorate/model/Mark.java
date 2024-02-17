@@ -9,8 +9,8 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class Like {
+public class Mark {
     final Integer filmId;
     final Integer userId;
-    Integer grade;
+    Integer rating;
 }

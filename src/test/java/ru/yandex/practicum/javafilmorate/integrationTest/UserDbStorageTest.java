@@ -11,13 +11,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.javafilmorate.JavaFilmorateApplication;
 import ru.yandex.practicum.javafilmorate.model.Film;
-import ru.yandex.practicum.javafilmorate.model.Like;
+import ru.yandex.practicum.javafilmorate.model.Mark;
 import ru.yandex.practicum.javafilmorate.model.Mpa;
 import ru.yandex.practicum.javafilmorate.model.User;
 import ru.yandex.practicum.javafilmorate.service.EventService;
 import ru.yandex.practicum.javafilmorate.service.UserService;
 import ru.yandex.practicum.javafilmorate.storage.dao.FriendStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.MarkStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.FilmDbStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.UserDbStorage;
 
@@ -37,7 +37,7 @@ class UserDbStorageTest {
     private final UserDbStorage userDbStorage;
     private final FriendStorage friendStorage;
     private final EventService eventService;
-    private final LikeStorage likeStorage;
+    private final MarkStorage markStorage;
     private final User firstUser = new User(1, "email@yandex.ru", "Login1", "Name1", LocalDate.parse("1970-01-01"), null);
     private final User secontUser = new User(1, "email@gmail.com", "Login2", "Name2", LocalDate.parse("1980-01-01"), null);
     private final User thirdUser = new User(3, "email@gmail.com", "Login3", "Name3", LocalDate.parse("1990-01-01"), null);
@@ -92,7 +92,7 @@ class UserDbStorageTest {
     @Test
     @DisplayName("Проверка метода findSimilarUserId в UserService")
     void findRecommendationsForUserTest() {
-        UserService userService = new UserService(userDbStorage, filmDbStorage, friendStorage, eventService, likeStorage);
+        UserService userService = new UserService(userDbStorage, filmDbStorage, friendStorage, eventService, markStorage);
 
         Film film1 = new Film(null, "Film1", "Description1", LocalDate.parse("1970-01-01"),
                 140, new Mpa(1, "G"));
@@ -119,20 +119,20 @@ class UserDbStorageTest {
         int user2Id = secontUser.getId();
         int user3Id = thirdUser.getId();
         int user4Id = forthUser.getId();
-        likeStorage.addLike(new Like(film1Id, user1Id, 5));
-        likeStorage.addLike(new Like(film2Id, user1Id, 4));
-        likeStorage.addLike(new Like(film3Id, user1Id, 6));
+        markStorage.addMark(new Mark(film1Id, user1Id, 5));
+        markStorage.addMark(new Mark(film2Id, user1Id, 4));
+        markStorage.addMark(new Mark(film3Id, user1Id, 6));
 
-        likeStorage.addLike(new Like(film1Id, user2Id, 4));
-        likeStorage.addLike(new Like(film2Id, user2Id, 6));
-        likeStorage.addLike(new Like(film5Id, user2Id, 6));
+        markStorage.addMark(new Mark(film1Id, user2Id, 4));
+        markStorage.addMark(new Mark(film2Id, user2Id, 6));
+        markStorage.addMark(new Mark(film5Id, user2Id, 6));
 
-        likeStorage.addLike(new Like(film1Id, user3Id, 6));
-        likeStorage.addLike(new Like(film4Id, user3Id, 5));
+        markStorage.addMark(new Mark(film1Id, user3Id, 6));
+        markStorage.addMark(new Mark(film4Id, user3Id, 5));
 
-        likeStorage.addLike(new Like(film1Id, user4Id, 6));
-        likeStorage.addLike(new Like(film5Id, user4Id, 5));
-        likeStorage.addLike(new Like(film3Id, user4Id, 8));
+        markStorage.addMark(new Mark(film1Id, user4Id, 6));
+        markStorage.addMark(new Mark(film5Id, user4Id, 5));
+        markStorage.addMark(new Mark(film3Id, user4Id, 8));
 
         /* Рекомендация фильмов должна состоять из списка одного фильма с Id 3*/
         List<Film> films = userService.findRecommendationsForUser(user2Id);

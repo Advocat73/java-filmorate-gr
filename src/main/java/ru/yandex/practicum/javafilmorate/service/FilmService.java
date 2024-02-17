@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.javafilmorate.model.*;
 import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.MarkStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final LikeStorage likeStorage;
+    private final MarkStorage markStorage;
     private final EventService eventService;
 
     public Film findById(Integer filmId) {
@@ -45,16 +45,16 @@ public class FilmService {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление отметки \"like\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
         try {
-            likeStorage.addLike(new Like(filmId, userId, 0));
+            markStorage.addMark(new Mark(filmId, userId, 0));
         } catch (Exception ignored) {
         }
         eventService.add(new Event(EventType.LIKE, OperationType.ADD, filmId, userId));
     }
 
-    public void deleteLike(Integer filmId, Integer userId) {
+    public void deleteMark(Integer filmId, Integer userId) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на удаление отметки \"like\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
-        likeStorage.deleteLike(filmId, userId);
+        markStorage.deleteMark(filmId, userId);
         eventService.add(new Event(EventType.LIKE, OperationType.REMOVE, filmId, userId));
     }
 
@@ -65,10 +65,10 @@ public class FilmService {
 
         for (Film film : films) {
             double gradeCount = 0;
-            for (Like like : film.getLikes())
-                gradeCount += like.getGrade();
-            if (film.getLikes().size() != 0)
-                filmGradeList.add(new FilmItem(film, gradeCount / film.getLikes().size()));
+            for (Mark mark : film.getMarks())
+                gradeCount += mark.getRating();
+            if (film.getMarks().size() != 0)
+                filmGradeList.add(new FilmItem(film, gradeCount / film.getMarks().size()));
         }
 
         return filmGradeList.stream()
