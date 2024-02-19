@@ -130,8 +130,8 @@ public class UserService {
     }
 
     private List<Film> getListRecommendFilmsForRequesterFromListSimilarUserId(Map<Integer, Set<Mark>> allMarksMap,
-                                                                         List<Integer> userFilmsListId,
-                                                                         List<Integer> listResultSimilarId) {
+                                                                              List<Integer> userFilmsListId,
+                                                                              List<Integer> listResultSimilarId) {
         ArrayList<Mark> marks = new ArrayList<>();
         for (Set<Mark> ms : allMarksMap.values())
             marks.addAll(ms);
