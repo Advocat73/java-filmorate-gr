@@ -24,7 +24,7 @@ public class MarkDbStorage implements MarkStorage {
         isFilmRegistered(filmId);
         isUserRegistered(userId);
         log.info("ХРАНИЛИЩЕ: Сохранение отметки\"mark\" фильму с id {} от пользователя с id {}", filmId, userId);
-        String sqlQuery = "INSERT INTO LIKES (FILM_ID, USER_ID, GRADE) VALUES (?, ?, ?)";
+        String sqlQuery = "INSERT INTO MARKS (FILM_ID, USER_ID, RATING) VALUES (?, ?, ?)";
         jdbcTemplate.update(sqlQuery, filmId, userId, mark.getRating());
     }
 
@@ -33,7 +33,7 @@ public class MarkDbStorage implements MarkStorage {
         isFilmRegistered(filmId);
         isUserRegistered(userId);
         log.info("ХРАНИЛИЩЕ: Удаление отметки\"mark\" у фильма с id {} от пользователя с id {}", filmId, userId);
-        String sqlQuery = "DELETE FROM LIKES WHERE FILM_ID = ? AND USER_ID = ?";
+        String sqlQuery = "DELETE FROM MARKS WHERE FILM_ID = ? AND USER_ID = ?";
         jdbcTemplate.update(sqlQuery, filmId, userId);
     }
 
@@ -41,21 +41,21 @@ public class MarkDbStorage implements MarkStorage {
     public List<Mark> getMarks(int filmId) {
         isFilmRegistered(filmId);
         log.info("ХРАНИЛИЩЕ: Получение отметок \"mark\" для фильма с id {}", filmId);
-        String sqlQuery = "SELECT * FROM LIKES WHERE FILM_ID = ?";
+        String sqlQuery = "SELECT * FROM MARKS WHERE FILM_ID = ?";
         return jdbcTemplate.query(sqlQuery,
-                (rs, rowNum) -> new Mark(filmId, rs.getInt("USER_ID"), rs.getInt("GRADE")),
+                (rs, rowNum) -> new Mark(filmId, rs.getInt("USER_ID"), rs.getInt("RATING")),
                 filmId);
     }
 
     @Override
     public Map<Integer, Set<Mark>> getAllMarks() {
         log.info("ХРАНИЛИЩЕ: Получение карты всех оценок");
-        List<Map<String, Object>> likesDatabaseResult = jdbcTemplate.queryForList("SELECT * from likes");
-        Map<Integer, Set<Mark>> likes = new HashMap<>();
-        for (Map<String, Object> map : likesDatabaseResult)
-            likes.computeIfAbsent((Integer) map.get("film_id"), k -> new HashSet<>())
-                    .add(new Mark((Integer) map.get("FILM_ID"), (Integer) map.get("USER_ID"), (Integer) map.get("GRADE")));
-        return likes;
+        List<Map<String, Object>> marksDatabaseResult = jdbcTemplate.queryForList("SELECT * FROM MARKS");
+        Map<Integer, Set<Mark>> marks = new HashMap<>();
+        for (Map<String, Object> map : marksDatabaseResult)
+            marks.computeIfAbsent((Integer) map.get("film_id"), k -> new HashSet<>())
+                    .add(new Mark((Integer) map.get("FILM_ID"), (Integer) map.get("USER_ID"), (Integer) map.get("RATING")));
+        return marks;
     }
 
     private void isFilmRegistered(int filmId) {

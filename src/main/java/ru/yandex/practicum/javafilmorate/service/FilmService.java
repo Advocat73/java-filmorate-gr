@@ -64,18 +64,18 @@ public class FilmService {
     public List<Film> getPopularFilms(Integer limit) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на получение списка {} самых популярных фильмов", limit);
         List<Film> films = filmStorage.findAll();
-        List<FilmItem> filmGradeList = new ArrayList<>();
+        List<FilmItem> filmRatingList = new ArrayList<>();
 
         for (Film film : films) {
-            double gradeCount = 0;
+            double ratingCount = 0;
             for (Mark mark : film.getMarks())
-                gradeCount += mark.getRating();
+                ratingCount += mark.getRating();
             if (film.getMarks().size() != 0)
-                filmGradeList.add(new FilmItem(film, gradeCount / film.getMarks().size()));
+                filmRatingList.add(new FilmItem(film, ratingCount / film.getMarks().size()));
         }
 
-        return filmGradeList.stream()
-                .sorted(Comparator.comparingDouble(FilmItem::getGrade).reversed())
+        return filmRatingList.stream()
+                .sorted(Comparator.comparingDouble(FilmItem::getRating).reversed())
                 .limit(limit)
                 .map(FilmItem::getFilm)
                 .collect(Collectors.toList());
@@ -121,7 +121,7 @@ public class FilmService {
         return filmStorage.findDirectorFilmsByYearOrLikes(directorId, sortBy);
     }
 
-    private class FilmItem {
+    private static class FilmItem {
         Film film;
         Double grade;
 
@@ -138,11 +138,11 @@ public class FilmService {
             this.film = film;
         }
 
-        public Double getGrade() {
+        public Double getRating() {
             return grade;
         }
 
-        public void setGrade(Double grade) {
+        public void setRating(Double grade) {
             this.grade = grade;
         }
     }

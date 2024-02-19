@@ -76,78 +76,71 @@ public class UserService {
     public List<Film> findRecommendationsForUser(Integer requesterId) {
         log.info("СЕРВИС: Обработка запроса на рекомендации фильмов для пользователя с id {}", requesterId);
 
-        Map<Integer, Set<Mark>> marks = markStorage.getAllMarks();
-        List<Integer> userFilmsListId = new ArrayList<>();
-        HashMap<Mark, Set<Mark>> mapMarksUserPresent = new HashMap<>();
-        for (Map.Entry<Integer, Set<Mark>> filmMarks : marks.entrySet())
+        Map<Integer, Set<Mark>> allMarksMap = markStorage.getAllMarks();
+
+        List<Integer> requesterFilmsListId = new ArrayList<>();
+        HashMap<Mark, Set<Mark>> marksRequesterFilmsListIdPresentMap = new HashMap<>();
+
+        for (Map.Entry<Integer, Set<Mark>> filmMarks : allMarksMap.entrySet())
             for (Mark mark : filmMarks.getValue())
                 if (Objects.equals(mark.getUserId(), requesterId)) {
-                    userFilmsListId.add(filmMarks.getKey());
-                    mapMarksUserPresent.put(mark, filmMarks.getValue());
+                    requesterFilmsListId.add(filmMarks.getKey());
+                    marksRequesterFilmsListIdPresentMap.put(mark, filmMarks.getValue());
                 }
 
-        /* мапа, состоящая из ID юзера-кандидата и суммарной разницы лайков основного юзера и юзера-кандидата */
-        HashMap<Integer, Integer> diff = new HashMap<>();
-        /* мапа, состоящая из ID юзера-кандидата и счетчика факта совпадения лайка основного юзера и юзера-кандидата */
-        HashMap<Integer, Integer> freq = new HashMap<>();
+        return getListRecommendFilmsForRequesterFromListSimilarUserId(allMarksMap, requesterFilmsListId,
+                getListSimilarUsers(marksRequesterFilmsListIdPresentMap));
+    }
 
-        for (Map.Entry<Mark, Set<Mark>> setMarksUserPresent : mapMarksUserPresent.entrySet()) {
-            Mark requesterMark = setMarksUserPresent.getKey();
-            for (Mark candidatMark : setMarksUserPresent.getValue()) {
-                if (!Objects.equals(requesterMark.getUserId(), candidatMark.getUserId())) {
-                    if (!diff.containsKey(candidatMark.getUserId())) {
-                        diff.put(candidatMark.getUserId(), 0);
-                        freq.put(candidatMark.getUserId(), 0);
-                    }
-                    int oldGrade = diff.get(candidatMark.getUserId());
-                    int oldCount = freq.get(candidatMark.getUserId());
-                    int currentRatingDiff = requesterMark.getRating() - candidatMark.getRating();
-                    diff.put(candidatMark.getUserId(), oldGrade + currentRatingDiff);
-                    freq.put(candidatMark.getUserId(), oldCount + 1);
-                }
-            }
-        }
+    private List<Integer> getListSimilarUsers(HashMap<Mark, Set<Mark>> marksRequesterFilmsListIdPresentMap) {
+        HashMap<Integer, Integer> candidateAndRequesterSumDiffMap = new HashMap<>();
+        HashMap<Integer, Integer> counterFreqConcurrenceMarksMap = new HashMap<>();
+        computeSummaMarksDiff(marksRequesterFilmsListIdPresentMap
+                , candidateAndRequesterSumDiffMap
+                , counterFreqConcurrenceMarksMap);
 
-        List<Integer> listResultSimilarId = diff.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> Math.abs((double) e.getValue() / (double) freq.get(e.getKey()))))
+        return candidateAndRequesterSumDiffMap.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> Math.abs((double) e.getValue()
+                        / (double) counterFreqConcurrenceMarksMap.get(e.getKey()))))
                 .entrySet().stream()
                 .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.mapping(Map.Entry::getKey, Collectors.toList())))
                 .entrySet().stream().min(Comparator.comparingDouble(Map.Entry::getKey))
                 .map(Map.Entry::getValue).orElse(List.of());
-
-        /* Получаем и возвращаем список рекомендуемых фильмов*/
-        return getListRecommendFilmsForUserFromListSimilarUserId(marks, userFilmsListId, listResultSimilarId);
     }
 
-    private boolean isUserLikeForFilmGood(Integer filmId, Integer userId) {
-        Film film = filmStorage.findById(filmId);
-        Set<Mark> marks = film.getMarks();
-        for (Mark mark : marks)
-            if (mark.getUserId() == userId && mark.getRating() < 5)
-                return false;
-        return true;
+    private void computeSummaMarksDiff(HashMap<Mark, Set<Mark>> marksRequesterFilmsListIdPresentMap,
+                                       HashMap<Integer, Integer> candidateAndRequesterSumDiffMap,
+                                       HashMap<Integer, Integer> counterFreqConcurrenceMarksMap) {
+        for (Map.Entry<Mark, Set<Mark>> MarksRequesterPresentEntry : marksRequesterFilmsListIdPresentMap.entrySet()) {
+            Mark requesterMark = MarksRequesterPresentEntry.getKey();
+            for (Mark candidatMark : MarksRequesterPresentEntry.getValue()) {
+                if (!Objects.equals(requesterMark.getUserId(), candidatMark.getUserId())) {
+                    if (!candidateAndRequesterSumDiffMap.containsKey(candidatMark.getUserId())) {
+                        candidateAndRequesterSumDiffMap.put(candidatMark.getUserId(), 0);
+                        counterFreqConcurrenceMarksMap.put(candidatMark.getUserId(), 0);
+                    }
+                    int oldGrade = candidateAndRequesterSumDiffMap.get(candidatMark.getUserId());
+                    int oldCount = counterFreqConcurrenceMarksMap.get(candidatMark.getUserId());
+                    int currentRatingDiff = requesterMark.getRating() - candidatMark.getRating();
+                    candidateAndRequesterSumDiffMap.put(candidatMark.getUserId(), oldGrade + currentRatingDiff);
+                    counterFreqConcurrenceMarksMap.put(candidatMark.getUserId(), oldCount + 1);
+                }
+            }
+        }
     }
 
-    private List<Film> getListRecommendFilmsForUserFromListSimilarUserId(Map<Integer, Set<Mark>> marks,
+    private List<Film> getListRecommendFilmsForRequesterFromListSimilarUserId(Map<Integer, Set<Mark>> allMarksMap,
                                                                          List<Integer> userFilmsListId,
                                                                          List<Integer> listResultSimilarId) {
-        /* Собираем фильмы в сет, чтобы повторяющиеся не попали в список */
-        Set<Film> films = new HashSet<>();
-        /* Для каждого ID из списка похожих юзеров формируем список Id фильмов, которые лайкнул похожий юзер */
-        for (Integer similarUserId : listResultSimilarId) {
-            List<Integer> similarUserFilmsListId = new ArrayList<>();
-            for (Map.Entry<Integer, Set<Mark>> filmMarks : marks.entrySet())
-                for (Mark like : filmMarks.getValue())
-                    if (like.getUserId().equals(similarUserId))
-                        similarUserFilmsListId.add(filmMarks.getKey());
-            /* Удаляем повторяющиеся ID фильмов, проверяем на то,
-            чтобы оценка похожего юзера была не ниже 5 и формируем список фильмов */
-            similarUserFilmsListId.removeAll(userFilmsListId);
-            similarUserFilmsListId.forEach(filmId -> {
-                if (isUserLikeForFilmGood(filmId, similarUserId))
-                    films.add(filmStorage.findById(filmId));
-            });
-        }
-        return new ArrayList<>(films);
+        ArrayList<Mark> marks = new ArrayList<>();
+        for (Set<Mark> ms : allMarksMap.values())
+            marks.addAll(ms);
+
+        return marks.stream().filter(ms -> listResultSimilarId.contains(ms.getUserId()))
+                .filter(ms -> userFilmsListId.contains(ms.getUserId()))
+                .filter(ms -> ms.getRating() > 5)
+                .map(Mark::getFilmId)
+                .map(filmStorage::findById)
+                .collect(Collectors.toList());
     }
 }

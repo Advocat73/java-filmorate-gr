@@ -97,13 +97,13 @@ public class FilmDbStorage implements FilmStorage {
         } else {
             throw new UnregisteredDataException("Фильм с id " + filmId + " не зарегистрирован в системе");
         }
-        rs = jdbcTemplate.queryForRowSet("SELECT * FROM LIKES WHERE FILM_ID = ?", filmId);
+        rs = jdbcTemplate.queryForRowSet("SELECT * FROM MARKS WHERE FILM_ID = ?", filmId);
         Set<Mark> marks = new HashSet<>();
         while (rs.next()) {
             Mark mark = new Mark(
                     rs.getInt("FILM_ID"),
                     rs.getInt("USER_ID"),
-                    rs.getInt("GRADE"));
+                    rs.getInt("RATING"));
             marks.add(mark);
         }
         film.addMarks(marks);
@@ -114,7 +114,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularFilms(int limit) {
         List<Film> films = new ArrayList<>();
         String sqlQuery = "SELECT F.* FROM FILMS AS F " +
-                "JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                "JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                 "GROUP BY L.FILM_ID ORDER BY COUNT(L.FILM_ID)  DESC LIMIT ?";
         SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, limit);
         System.out.println(rs);
@@ -130,7 +130,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularByGenre(int count, int genreId) {
         List<Film> films = new ArrayList<>();
         String sqlQuery = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
-                "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                 "LEFT JOIN FILM_GENRES AS FG ON F.FILM_ID = FG.FILM_ID " +
                 "WHERE FG.GENRE_ID = ? " +
                 "GROUP BY F.FILM_ID ORDER BY COUNT(L.USER_ID) DESC LIMIT ?";
@@ -146,7 +146,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularByYear(int count, int year) {
         List<Film> films = new ArrayList<>();
         String sqlQuery = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
-                "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                 "WHERE YEAR(F.FILM_RELEASE_DATE) = ? " +
                 "GROUP BY F.FILM_ID ORDER BY COUNT(L.USER_ID) DESC LIMIT ?";
         SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, year, count);
@@ -161,7 +161,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularByGenreAndYear(int count, int genreId, int year) {
         List<Film> films = new ArrayList<>();
         String sqlQuery = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
-                "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                 "LEFT JOIN FILM_GENRES AS FG ON F.FILM_ID = FG.FILM_ID " +
                 "WHERE FG.GENRE_ID = ? AND YEAR(F.FILM_RELEASE_DATE) = ? " +
                 "GROUP BY F.FILM_ID ORDER BY COUNT(L.USER_ID) DESC LIMIT ?";
@@ -181,7 +181,7 @@ public class FilmDbStorage implements FilmStorage {
         if (by.equalsIgnoreCase("director")) {
             log.info("ХРАНИЛИЩЕ: Получение фильмов с именем режиссера, содержащим подстроку {}", query);
             sql = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
-                    "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                    "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                     "LEFT JOIN FILMS_DIRECTORS AS FD ON F.FILM_ID = FD.FILM_ID " +
                     "LEFT JOIN DIRECTORS AS D ON FD.DIRECTOR_ID = D.DIRECTOR_ID " +
                     "WHERE LOWER(D.DIRECTOR_NAME) LIKE '%" + query.toLowerCase() + "%'" +
@@ -189,17 +189,17 @@ public class FilmDbStorage implements FilmStorage {
         } else if (by.equalsIgnoreCase("title")) {
             log.info("ХРАНИЛИЩЕ: Получение фильмов с названием, содержащим подстроку {}", query);
             sql = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
-                    "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
-                    "WHERE LOWER(F.FILM_NAME) LIKE '%" + query.toLowerCase() + "%'" +
+                    "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
+                    "WHERE LOWER(F.FILM_NAME) MARK '%" + query.toLowerCase() + "%'" +
                     "GROUP BY F.FILM_ID ORDER BY COUNT(L.USER_ID) DESC, F.FILM_ID";
         } else if (by.equalsIgnoreCase("director,title") || by.equalsIgnoreCase("title,director")) {
             log.info("ХРАНИЛИЩЕ: Получение фильмов с именем режиссера или названием, содержащим подстроку {}", query);
             sql = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
-                    "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                    "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                     "LEFT JOIN FILMS_DIRECTORS AS FD ON F.FILM_ID = FD.FILM_ID " +
                     "LEFT JOIN DIRECTORS AS D ON FD.DIRECTOR_ID = D.DIRECTOR_ID " +
-                    "WHERE LOWER(D.DIRECTOR_NAME) LIKE '%" + query.toLowerCase() +
-                    "%' OR LOWER(F.FILM_NAME) LIKE '%" + query.toLowerCase() + "%' " +
+                    "WHERE LOWER(D.DIRECTOR_NAME) MARK '%" + query.toLowerCase() +
+                    "%' OR LOWER(F.FILM_NAME) MARK '%" + query.toLowerCase() + "%' " +
                     "GROUP BY F.FILM_ID ORDER BY COUNT(L.USER_ID) DESC, F.FILM_ID";
         } else {
             throw new UnregisteredDataException("Запрос поиска по параметру " + by + " не найден");
@@ -225,7 +225,7 @@ public class FilmDbStorage implements FilmStorage {
         } else if (sortBy.equalsIgnoreCase("likes")) {
             sql = "SELECT F.*, COUNT(L.USER_ID) FROM FILMS AS F " +
                     "JOIN FILMS_DIRECTORS AS FD ON F.FILM_ID = FD.FILM_ID " +
-                    "LEFT JOIN LIKES AS L ON F.FILM_ID = L.FILM_ID " +
+                    "LEFT JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
                     "WHERE FD.DIRECTOR_ID = " + directorId +
                     " GROUP BY F.FILM_ID ORDER BY COUNT(L.USER_ID) DESC";
         } else {
@@ -261,8 +261,8 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private int getFilmLikes(int filmId) {
-        log.info("ХРАНИЛИЩЕ: Получение количества отметок \"лайк\" для фильма с id {}", filmId);
-        String sqlQuery = "SELECT COUNT(FILM_ID) AS AMOUNT FROM LIKES WHERE FILM_ID = ?";
+        log.info("ХРАНИЛИЩЕ: Получение количества отметок \"оценок\" для фильма с id {}", filmId);
+        String sqlQuery = "SELECT COUNT(FILM_ID) AS AMOUNT FROM MARKS WHERE FILM_ID = ?";
         SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, filmId);
         if (rs.next()) {
             return rs.getInt("AMOUNT");
@@ -331,19 +331,19 @@ public class FilmDbStorage implements FilmStorage {
 
         String sqlQuery = "SELECT t.*        \n" +
                 "            FROM (SELECT f.*, \n" +
-                "                         count(f.film_id) likes\n" +
+                "                         count(f.film_id) marks\n" +
                 "                    FROM Films f\n" +
-                "                   INNER JOIN LIKES l ON l.film_id = f.film_id  \n" +
+                "                   INNER JOIN MARKS l ON l.film_id = f.film_id  \n" +
                 "                   GROUP BY (f.film_id)) t\n" +
-                "           INNER JOIN LIKES l2 ON l2.film_id = t.film_id AND l2.user_id=?\n" +
+                "           INNER JOIN MARKS l2 ON l2.film_id = t.film_id AND l2.user_id=?\n" +
                 "          INTERSECT\n" +
                 "          SELECT t.*        \n" +
                 "            FROM (SELECT f.*, \n" +
-                "                         count(f.film_id) likes\n" +
+                "                         count(f.film_id) marks\n" +
                 "                    FROM Films f\n" +
-                "                   INNER JOIN LIKES l ON l.film_id = f.film_id  \n" +
+                "                   INNER JOIN MARKS l ON l.film_id = f.film_id  \n" +
                 "                   GROUP BY (f.film_id)) t\n" +
-                "           INNER JOIN LIKES l2 ON l2.film_id = t.film_id AND l2.user_id=? \n" +
+                "           INNER JOIN MARKS l2 ON l2.film_id = t.film_id AND l2.user_id=? \n" +
                 "          ORDER BY likes DESC; ";
 
         List<Film> films = new ArrayList<>();

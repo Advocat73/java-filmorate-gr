@@ -14,7 +14,9 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class Mark {
+    @NotNull
     final Integer filmId;
+    @NotNull
     final Integer userId;
     @Min(1)
     @Max(10)
