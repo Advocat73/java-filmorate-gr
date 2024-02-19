@@ -95,9 +95,7 @@ public class UserService {
     private List<Integer> getListSimilarUsers(HashMap<Mark, Set<Mark>> marksRequesterFilmsListIdPresentMap) {
         HashMap<Integer, Integer> candidateAndRequesterSumDiffMap = new HashMap<>();
         HashMap<Integer, Integer> counterFreqConcurrenceMarksMap = new HashMap<>();
-        computeSummaMarksDiff(marksRequesterFilmsListIdPresentMap
-                , candidateAndRequesterSumDiffMap
-                , counterFreqConcurrenceMarksMap);
+        computeSummaMarksDiff(marksRequesterFilmsListIdPresentMap, candidateAndRequesterSumDiffMap, counterFreqConcurrenceMarksMap);
 
         return candidateAndRequesterSumDiffMap.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> Math.abs((double) e.getValue()
@@ -111,9 +109,9 @@ public class UserService {
     private void computeSummaMarksDiff(HashMap<Mark, Set<Mark>> marksRequesterFilmsListIdPresentMap,
                                        HashMap<Integer, Integer> candidateAndRequesterSumDiffMap,
                                        HashMap<Integer, Integer> counterFreqConcurrenceMarksMap) {
-        for (Map.Entry<Mark, Set<Mark>> MarksRequesterPresentEntry : marksRequesterFilmsListIdPresentMap.entrySet()) {
-            Mark requesterMark = MarksRequesterPresentEntry.getKey();
-            for (Mark candidatMark : MarksRequesterPresentEntry.getValue()) {
+        for (Map.Entry<Mark, Set<Mark>> marksRequesterPresentEntry : marksRequesterFilmsListIdPresentMap.entrySet()) {
+            Mark requesterMark = marksRequesterPresentEntry.getKey();
+            for (Mark candidatMark : marksRequesterPresentEntry.getValue()) {
                 if (!Objects.equals(requesterMark.getUserId(), candidatMark.getUserId())) {
                     if (!candidateAndRequesterSumDiffMap.containsKey(candidatMark.getUserId())) {
                         candidateAndRequesterSumDiffMap.put(candidatMark.getUserId(), 0);
