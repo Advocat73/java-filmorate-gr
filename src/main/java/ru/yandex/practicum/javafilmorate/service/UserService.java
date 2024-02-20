@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @AllArgsConstructor
 public class UserService {
-    private final static int MIN_GOOD_FILM_RATING = 5;
+    private static final int MIN_GOOD_FILM_RATING = 5;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
     private final FriendStorage friendStorage;
@@ -99,7 +99,7 @@ public class UserService {
         computeSummaMarksDiff(marksRequesterFilmsListIdPresentMap, candidateAndRequesterSumDiffMap, counterFreqConcurrenceMarksMap);
 
         return candidateAndRequesterSumDiffMap.entrySet().stream()
-                .map(e->Map.entry(e.getKey(), Math.abs((double) e.getValue()
+                .map(e -> Map.entry(e.getKey(), Math.abs((double) e.getValue()
                         / (double) counterFreqConcurrenceMarksMap.get(e.getKey()))))
                 .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.mapping(Map.Entry::getKey, Collectors.toList())))
                 .entrySet().stream().min(Comparator.comparingDouble(Map.Entry::getKey))
@@ -132,7 +132,7 @@ public class UserService {
                                                                               List<Integer> listResultSimilarId) {
         return allMarksMap.values().stream()
                 .flatMap(Collection::stream).collect(Collectors.toList())
-                .stream().filter(mark->checkMark(mark, requesterFilmsListId, listResultSimilarId))
+                .stream().filter(mark -> checkMark(mark, requesterFilmsListId, listResultSimilarId))
                 .map(Mark::getFilmId)
                 .map(filmStorage::findById).distinct().collect(Collectors.toList());
     }
