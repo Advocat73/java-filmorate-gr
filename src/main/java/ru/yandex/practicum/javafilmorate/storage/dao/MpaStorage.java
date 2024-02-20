@@ -10,4 +10,6 @@ public interface MpaStorage {
     Mpa findById(int mpaId);
 
     List<Mpa> findAll();
+
+    Mpa getMpaRating(int mpaId);
 }

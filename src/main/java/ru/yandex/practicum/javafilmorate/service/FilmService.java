@@ -3,14 +3,13 @@ package ru.yandex.practicum.javafilmorate.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.javafilmorate.model.Event;
-import ru.yandex.practicum.javafilmorate.model.EventType;
-import ru.yandex.practicum.javafilmorate.model.Film;
-import ru.yandex.practicum.javafilmorate.model.OperationType;
+import ru.yandex.practicum.javafilmorate.model.*;
 import ru.yandex.practicum.javafilmorate.storage.dao.FilmStorage;
-import ru.yandex.practicum.javafilmorate.storage.dao.LikeStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.MarkStorage;
 import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
+import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
+import javax.validation.ConstraintViolationException;
 import java.util.List;
 
 @Slf4j
@@ -18,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final LikeStorage likeStorage;
+    private final MarkStorage markStorage;
     private final EventService eventService;
 
     public Film findById(Integer filmId) {
@@ -41,17 +40,21 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    public void addLike(Integer filmId, Integer userId) {
-        log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление отметки \"like\" " +
+    public void addMark(Integer filmId, Integer userId, Integer rating) {
+        log.info("СЕРВИС: Отправлен запрос к хранилищу на добавление отметки \"mark\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
-        likeStorage.addLike(filmId, userId);
+        try {
+            markStorage.addMark(new Mark(filmId, userId, rating));
+        } catch (ConstraintViolationException e) {
+            throw new UnregisteredDataException("Пользователь с Id: " + userId + " уже дал оценку фильму с ID " + filmId);
+        }
         eventService.add(new Event(EventType.LIKE, OperationType.ADD, filmId, userId));
     }
 
-    public void deleteLike(Integer filmId, Integer userId) {
-        log.info("СЕРВИС: Отправлен запрос к хранилищу на удаление отметки \"like\" " +
+    public void deleteMark(Integer filmId, Integer userId) {
+        log.info("СЕРВИС: Отправлен запрос к хранилищу на удаление отметки \"mark\" " +
                 "фильму с id {} от пользователя с id {} ", filmId, userId);
-        likeStorage.deleteLike(filmId, userId);
+        markStorage.deleteMark(filmId, userId);
         eventService.add(new Event(EventType.LIKE, OperationType.REMOVE, filmId, userId));
     }
 

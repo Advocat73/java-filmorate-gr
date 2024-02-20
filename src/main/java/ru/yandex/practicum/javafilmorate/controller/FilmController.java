@@ -86,15 +86,15 @@ public class FilmController {
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable int id, @PathVariable int userId) {
+    public void addLike(@PathVariable int id, @PathVariable int userId, @Valid @RequestParam Integer rating) {
         log.info("КОНТРОЛЛЕР: PUT-запрос по эндпоинту /films/{}/like/{}", id, userId);
-        filmService.addLike(id, userId);
+        filmService.addMark(id, userId, rating);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable int id, @PathVariable int userId) {
         log.info("КОНТРОЛЛЕР: DELETE-запрос по эндпоинту /films/{}/like/{}", id, userId);
-        filmService.deleteLike(id, userId);
+        filmService.deleteMark(id, userId);
     }
 
     @DeleteMapping("/{filmId}")
