@@ -14,9 +14,9 @@ import ru.yandex.practicum.javafilmorate.storage.dao.*;
 import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
@@ -112,18 +112,17 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopularFilms(int limit) {
-        List<Film> films = new ArrayList<>();
+        Map<Integer, Set<Mark>> marks = markStorage.getAllMarks();
+        Map<Integer, List<Genre>> filmGenres = genreStorage.getFilmsWithGenres();
         String sqlQuery = "SELECT F.* FROM FILMS AS F " +
-                "JOIN MARKS AS L ON F.FILM_ID = L.FILM_ID " +
-                "GROUP BY L.FILM_ID ORDER BY COUNT(L.FILM_ID)  DESC LIMIT ?";
-        SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, limit);
-        System.out.println(rs);
-        while (rs.next()) {
-            films.add(filmRowMap(rs));
-        }
-        log.info("ХРАНИЛИЩЕ: Получение списка {} самых популярных фильмов", limit);
-        if ((films.size() == 0)) return findAll().stream().limit(limit).collect(Collectors.toList());
-        else return films;
+                "JOIN MARKS AS M ON F.FILM_ID = M.FILM_ID " +
+                "GROUP BY F.FILM_ID ORDER BY SUM(M.RATING)  DESC LIMIT ?";
+        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilmForList(rs), limit);
+        films.forEach(film -> {
+            film.addMarks(marks.get(film.getId()));
+            film.setGenres(filmGenres.get(film.getId()));
+        });
+        return films;
     }
 
     @Override
@@ -244,7 +243,7 @@ public class FilmDbStorage implements FilmStorage {
                 rs.getInt("FILM_ID"),
                 rs.getString("FILM_NAME"),
                 rs.getString("FILM_DESCRIPTION"),
-                rs.getDate("FILM_RELEASE_DATE").toLocalDate(),
+                Objects.requireNonNull(rs.getDate("FILM_RELEASE_DATE")).toLocalDate(),
                 rs.getInt("FILM_DURATION"),
                 mpaStorage.findById(rs.getInt("MPA_ID")));
         film.setGenres(getFilmGenres(film.getId()));
@@ -260,18 +259,7 @@ public class FilmDbStorage implements FilmStorage {
         );
     }
 
-    private int getFilmLikes(int filmId) {
-        log.info("ХРАНИЛИЩЕ: Получение количества отметок \"оценок\" для фильма с id {}", filmId);
-        String sqlQuery = "SELECT COUNT(FILM_ID) AS AMOUNT FROM MARKS WHERE FILM_ID = ?";
-        SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, filmId);
-        if (rs.next()) {
-            return rs.getInt("AMOUNT");
-        } else {
-            return 0;
-        }
-    }
-
-    private Set<Genre> getFilmGenres(int filmId) {
+    private List<Genre> getFilmGenres(int filmId) {
         Set<Genre> filmGenres = new TreeSet<>(Comparator.comparingInt(Genre::getId));
         String sqlQuery = "SELECT * FROM GENRES WHERE GENRE_ID IN " +
                 "(SELECT GENRE_ID FROM FILM_GENRES WHERE FILM_ID = ?)";
@@ -280,7 +268,7 @@ public class FilmDbStorage implements FilmStorage {
             filmGenres.add(genreRowMap(rs));
         }
         log.info("ХРАНИЛИЩЕ: Получение жарнов для фильма с id {}", filmId);
-        return filmGenres;
+        return new ArrayList<>(filmGenres);
     }
 
     private SqlRowSet getAllFilms(int filmId) {
@@ -324,6 +312,16 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
+    private Film makeFilmForList(ResultSet rs) throws SQLException {
+        return new Film(
+                rs.getInt("FILM_ID"),
+                rs.getString("FILM_NAME"),
+                rs.getString("FILM_DESCRIPTION"),
+                rs.getDate("FILM_RELEASE_DATE").toLocalDate(),
+                rs.getInt("FILM_DURATION"),
+                mpaStorage.getMpaRating(rs.getInt("MPA_ID")));
+    }
+
     @Override
     public List<Film> commonFilms(int userId, int friendId) {
         log.info("ХРАНИЛИЩЕ: Получение списка общих фильмов пользователя id={} " +
@@ -351,7 +349,6 @@ public class FilmDbStorage implements FilmStorage {
         while (rs.next()) {
             films.add(filmRowMap(rs));
         }
-
         return films;
     }
 }

@@ -10,12 +10,10 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.javafilmorate.JavaFilmorateApplication;
-import ru.yandex.practicum.javafilmorate.model.Director;
-import ru.yandex.practicum.javafilmorate.model.Film;
-import ru.yandex.practicum.javafilmorate.model.Mpa;
-import ru.yandex.practicum.javafilmorate.model.User;
+import ru.yandex.practicum.javafilmorate.model.*;
 import ru.yandex.practicum.javafilmorate.storage.dao.DirectorStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.FilmDbStorage;
+import ru.yandex.practicum.javafilmorate.storage.dao.implementation.MarkDbStorage;
 import ru.yandex.practicum.javafilmorate.storage.dao.implementation.UserDbStorage;
 
 import java.time.LocalDate;
@@ -29,9 +27,10 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFOR
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class FilmDbStorageTest {
 
-    private final FilmDbStorage filmStorage;
+    private final FilmDbStorage filmDbStorage;
     private final UserDbStorage userDbStorage;
     private final DirectorStorage directorStorage;
+    private final MarkDbStorage marksDbStorage;
 
     private final Film film1 = new Film(null, "Film1", "Description1", LocalDate.parse("1970-01-01"),
             140, new Mpa(1, "G"));
@@ -43,47 +42,58 @@ public class FilmDbStorageTest {
     private final User secondUser = new User(1, "email@gmail.com", "Login2", "Name2", LocalDate.parse("1980-01-01"), null);
     private final User thirdUser = new User(3, "email@gmail.com", "Login3", "Name3", LocalDate.parse("1990-01-01"), null);
     private final Director director = new Director(1, "DirectorName");
+    private int film1Id, film2Id, film3Id;
+    private int user1Id, user2Id, user3Id;
 
     @BeforeEach
     void createFilmData() {
-        filmStorage.addFilm(film1);
-        filmStorage.addFilm(film2);
-        filmStorage.addFilm(film3);
+        film1.setGenres(List.of(new Genre(1, "Комедия")));
+        filmDbStorage.addFilm(film1);
+        film1Id = film1.getId();
+        film2.setGenres(List.of(new Genre(1, "Комедия")));
+        filmDbStorage.addFilm(film2);
+        film2Id = film2.getId();
+        film3.setGenres(List.of(new Genre(2, "Драма"), new Genre(3, "Мультфильм")));
+        filmDbStorage.addFilm(film3);
+        film3Id = film3.getId();
 
         userDbStorage.addUser(firstUser);
+        user1Id = firstUser.getId();
         userDbStorage.addUser(secondUser);
+        user2Id = secondUser.getId();
         userDbStorage.addUser(thirdUser);
+        user3Id = thirdUser.getId();
     }
 
     @Test
     @DisplayName("Проверка метода update для Film")
     void testUpdateFilm() {
         Film updateFilm = new Film(1, "Film1", "updateDescription", LocalDate.parse("1990-01-01"), 140, new Mpa(1, "G"));
-        filmStorage.updateFilm(updateFilm);
-        Film afterUpdate = filmStorage.findById(1);
+        filmDbStorage.updateFilm(updateFilm);
+        Film afterUpdate = filmDbStorage.findById(1);
         Assertions.assertEquals(afterUpdate.getDescription(), "updateDescription");
     }
 
     @Test
     @DisplayName("Проверка метода findById для Film")
     void testFindFilmById() {
-        Film film = filmStorage.findById(1);
+        Film film = filmDbStorage.findById(1);
         Assertions.assertEquals(film.getId(), 1);
     }
 
     @Test
     @DisplayName("Проверка метода findAll() для Film")
     void testFindAll() {
-        List<Film> current = filmStorage.findAll();
+        List<Film> current = filmDbStorage.findAll();
         Assertions.assertEquals(3, current.size(), "Количество фильмов не совпадает");
     }
 
     @Test
     @DisplayName("Проверка метода deleteFilm")
     void testDeleteFilm() {
-        filmStorage.deleteFilm(2);
+        filmDbStorage.deleteFilm(2);
 
-        List<Film> current = filmStorage.findAll();
+        List<Film> current = filmDbStorage.findAll();
         Assertions.assertEquals(2, current.size(), "Количество film не совпадает.");
 
         Film[] expect = new Film[]{film1, film3};
@@ -98,16 +108,33 @@ public class FilmDbStorageTest {
         directorStorage.addDirector(director2);
         //для каждого фильма указан режиссёр
         film1.getDirectors().add(director);
-        filmStorage.updateFilm(film1);
+        filmDbStorage.updateFilm(film1);
         film2.getDirectors().add(director);
-        filmStorage.updateFilm(film2);
+        filmDbStorage.updateFilm(film2);
         film3.getDirectors().add(director2);
-        filmStorage.updateFilm(film3);
+        filmDbStorage.updateFilm(film3);
         //получение списка фильмов, отсортированного по году
-        List<Film> filmsByYear = filmStorage.findDirectorFilmsByYearOrLikes(director.getId(), "year");
+        List<Film> filmsByYear = filmDbStorage.findDirectorFilmsByYearOrLikes(director.getId(), "year");
         Assertions.assertEquals(filmsByYear.size(), 2, "Количество фильмов не совпадает");
         Assertions.assertEquals(filmsByYear.get(0).getId(), film1.getId(), "Фильмы не отсортированы");
         Assertions.assertEquals(filmsByYear.get(1).getId(), film2.getId(), "Фильмы не отсортированы");
         Assertions.assertEquals(filmsByYear.get(0).getReleaseDate().toString(), "1970-01-01", "Даты не совпадают");
+    }
+
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    @Test
+    @DisplayName("Проверка выявления популярности, исходя из оценок")
+    void testGetMostPopularFilmsByMarks() {
+        marksDbStorage.addMark(new Mark(film1Id, user1Id, 2));
+        marksDbStorage.addMark(new Mark(film2Id, user1Id, 4));
+        marksDbStorage.addMark(new Mark(film3Id, user1Id, 7));
+        marksDbStorage.addMark(new Mark(film1Id, user2Id, 4));
+        marksDbStorage.addMark(new Mark(film2Id, user2Id, 6));
+        marksDbStorage.addMark(new Mark(film2Id, user3Id, 5));
+        List<Film> films = filmDbStorage.getPopularFilms(2);
+        /*Проверяем правильность полученного списка*/
+        Assertions.assertEquals(2, films.size(), "Размер списка популярных фильмов не 2");
+        Assertions.assertEquals(film2Id, films.get(0).getId(), "Не выявлен самый популярный фильм");
+        Assertions.assertEquals(film3Id, films.get(1).getId(), "Не выявлен самый непопулярный фильм");
     }
 }

@@ -8,10 +8,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Data
 public class Film {
@@ -57,5 +54,12 @@ public class Film {
     public void addMarks(Set<Mark> marks) {
         if (marks != null)
             this.marks.addAll(marks);
+    }
+
+    public void setGenres(List<Genre> genres) {
+        if (genres != null) {
+            this.genres.clear();
+            this.genres.addAll(genres);
+        }
     }
 }

@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @AllArgsConstructor
 public class UserService {
+    private final static int MIN_GOOD_FILM_RATING = 5;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
     private final FriendStorage friendStorage;
@@ -98,9 +99,8 @@ public class UserService {
         computeSummaMarksDiff(marksRequesterFilmsListIdPresentMap, candidateAndRequesterSumDiffMap, counterFreqConcurrenceMarksMap);
 
         return candidateAndRequesterSumDiffMap.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> Math.abs((double) e.getValue()
+                .map(e->Map.entry(e.getKey(), Math.abs((double) e.getValue()
                         / (double) counterFreqConcurrenceMarksMap.get(e.getKey()))))
-                .entrySet().stream()
                 .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.mapping(Map.Entry::getKey, Collectors.toList())))
                 .entrySet().stream().min(Comparator.comparingDouble(Map.Entry::getKey))
                 .map(Map.Entry::getValue).orElse(List.of());
@@ -118,27 +118,28 @@ public class UserService {
                         counterFreqConcurrenceMarksMap.put(candidatMark.getUserId(), 0);
                     }
                     int oldGrade = candidateAndRequesterSumDiffMap.get(candidatMark.getUserId());
-                    int oldCount = counterFreqConcurrenceMarksMap.get(candidatMark.getUserId());
+                    int oldRating = counterFreqConcurrenceMarksMap.get(candidatMark.getUserId());
                     int currentRatingDiff = requesterMark.getRating() - candidatMark.getRating();
                     candidateAndRequesterSumDiffMap.put(candidatMark.getUserId(), oldGrade + currentRatingDiff);
-                    counterFreqConcurrenceMarksMap.put(candidatMark.getUserId(), oldCount + 1);
+                    counterFreqConcurrenceMarksMap.put(candidatMark.getUserId(), oldRating + 1);
                 }
             }
         }
     }
 
     private List<Film> getListRecommendFilmsForRequesterFromListSimilarUserId(Map<Integer, Set<Mark>> allMarksMap,
-                                                                              List<Integer> userFilmsListId,
+                                                                              List<Integer> requesterFilmsListId,
                                                                               List<Integer> listResultSimilarId) {
-        ArrayList<Mark> marks = new ArrayList<>();
-        for (Set<Mark> ms : allMarksMap.values())
-            marks.addAll(ms);
-
-        return marks.stream().filter(ms -> listResultSimilarId.contains(ms.getUserId()))
-                .filter(ms -> userFilmsListId.contains(ms.getUserId()))
-                .filter(ms -> ms.getRating() > 5)
+        return allMarksMap.values().stream()
+                .flatMap(Collection::stream).collect(Collectors.toList())
+                .stream().filter(mark->checkMark(mark, requesterFilmsListId, listResultSimilarId))
                 .map(Mark::getFilmId)
-                .map(filmStorage::findById)
-                .collect(Collectors.toList());
+                .map(filmStorage::findById).distinct().collect(Collectors.toList());
+    }
+
+    private boolean checkMark(Mark mark, List<Integer> requesterFilmsListId, List<Integer> listResultSimilarId) {
+        return (listResultSimilarId.contains(mark.getUserId())
+                && !requesterFilmsListId.contains(mark.getFilmId())
+                && mark.getRating() > MIN_GOOD_FILM_RATING);
     }
 }

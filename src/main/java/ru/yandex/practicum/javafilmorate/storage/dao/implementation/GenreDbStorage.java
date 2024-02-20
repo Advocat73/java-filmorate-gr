@@ -15,7 +15,9 @@ import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Repository
@@ -50,6 +52,17 @@ public class GenreDbStorage implements GenreStorage {
             genres.add(genre);
         }
         return genres;
+    }
+
+    @Override
+    public Map<Integer, List<Genre>> getFilmsWithGenres() {
+        String sql = "SELECT FG.FILM_ID, FG.GENRE_ID, G.GENRE_NAME FROM FILM_GENRES AS FG JOIN GENRES AS G ON FG.GENRE_ID = G.GENRE_ID";
+        //String sql = "SELECT * FROM FILM_GENRES";
+        List<Map<String, Object>> genreDatabaseResult = jdbcTemplate.queryForList(sql);
+        Map<Integer, List<Genre>> filmGenres = new HashMap<>();
+        genreDatabaseResult.forEach(map -> filmGenres.computeIfAbsent((Integer) map.get("FILM_ID"), k -> new ArrayList<>())
+                .add(new Genre((Integer) map.get("GENRE_ID"), (String) map.get("GENRE_NAME"))));
+        return filmGenres;
     }
 
     @Override

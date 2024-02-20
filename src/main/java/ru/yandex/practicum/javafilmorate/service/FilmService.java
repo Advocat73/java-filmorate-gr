@@ -10,10 +10,7 @@ import ru.yandex.practicum.javafilmorate.utils.CheckUtil;
 import ru.yandex.practicum.javafilmorate.utils.UnregisteredDataException;
 
 import javax.validation.ConstraintViolationException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -63,22 +60,7 @@ public class FilmService {
 
     public List<Film> getPopularFilms(Integer limit) {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на получение списка {} самых популярных фильмов", limit);
-        List<Film> films = filmStorage.findAll();
-        List<FilmItem> filmRatingList = new ArrayList<>();
-
-        for (Film film : films) {
-            double ratingCount = 0;
-            for (Mark mark : film.getMarks())
-                ratingCount += mark.getRating();
-            if (film.getMarks().size() != 0)
-                filmRatingList.add(new FilmItem(film, ratingCount / film.getMarks().size()));
-        }
-
-        return filmRatingList.stream()
-                .sorted(Comparator.comparingDouble(FilmItem::getRating).reversed())
-                .limit(limit)
-                .map(FilmItem::getFilm)
-                .collect(Collectors.toList());
+        return filmStorage.getPopularFilms(limit);
     }
 
     public void deleteFilm(int filmId) {
@@ -119,31 +101,5 @@ public class FilmService {
         log.info("СЕРВИС: Отправлен запрос к хранилищу на получение списка фильмов режиссера с id {}, " +
                 "отсортированных по {}", directorId, sortBy);
         return filmStorage.findDirectorFilmsByYearOrLikes(directorId, sortBy);
-    }
-
-    private static class FilmItem {
-        Film film;
-        Double grade;
-
-        public FilmItem(Film film, Double grade) {
-            this.film = film;
-            this.grade = grade;
-        }
-
-        public Film getFilm() {
-            return film;
-        }
-
-        public void setFilm(Film film) {
-            this.film = film;
-        }
-
-        public Double getRating() {
-            return grade;
-        }
-
-        public void setRating(Double grade) {
-            this.grade = grade;
-        }
     }
 }
